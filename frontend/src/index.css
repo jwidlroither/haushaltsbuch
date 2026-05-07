@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design Tokens ── */
+:root {
+  --surface: #ffffff;
+  --surface-raised: #f8f7f5;
+  --surface-overlay: #f0ede8;
+  --ink: #1a1916;
+  --ink-muted: #6b6760;
+  --ink-faint: #b0ada6;
+  --accent: #c9611f;
+  --accent-muted: #f5e8de;
+  --success: #1a7a4a;
+  --danger: #c0392b;
+  --border: #e8e4de;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+}
+
+.dark {
+  --surface: #141210;
+  --surface-raised: #1e1c19;
+  --surface-overlay: #27241f;
+  --ink: #f5f2ee;
+  --ink-muted: #9e9890;
+  --ink-faint: #4a4740;
+  --accent: #e07840;
+  --accent-muted: #2a1e14;
+  --success: #2ecc71;
+  --danger: #e74c3c;
+  --border: #2e2b26;
+}
+
+/* ── Base ── */
+* { box-sizing: border-box; }
+
+html {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--surface-raised);
+  color: var(--ink);
+  min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ── Typography ── */
+.font-display { font-family: 'DM Serif Display', Georgia, serif; }
+.font-mono { font-family: 'DM Mono', monospace; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+
+/* ── Custom Components ── */
+@layer components {
+  .card {
+    @apply bg-surface rounded-[var(--radius)] border border-border shadow-card;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[var(--radius-sm)]
+           font-body font-medium text-sm transition-all duration-150 cursor-pointer
+           disabled:opacity-50 disabled:cursor-not-allowed select-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-[var(--accent)] text-white hover:brightness-110 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply btn bg-[var(--surface-overlay)] text-[var(--ink)] border border-[var(--border)]
+           hover:bg-[var(--border)] active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply btn text-[var(--ink-muted)] hover:bg-[var(--surface-overlay)] active:scale-95;
+  }
+
+  .btn-danger {
+    @apply btn bg-[var(--danger)] text-white hover:brightness-110 active:scale-95;
+  }
+
+  .input {
+    @apply w-full px-3.5 py-2.5 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)]
+           text-[var(--ink)] placeholder-[var(--ink-faint)] text-sm
+           focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent
+           transition-all duration-150;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-[var(--ink-muted)] mb-1.5 uppercase tracking-wide;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .amount-positive { @apply text-[var(--success)] font-mono font-medium; }
+  .amount-negative { @apply text-[var(--danger)] font-mono font-medium; }
+}
+
+/* ── Stagger Animation Helpers ── */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+.animate-on-mount {
+  opacity: 0;
+  animation: fadeUp 0.4s ease forwards;
+}
+
+/* ── Recharts Overrides ── */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+}
+
+/* ── Number formatting ── */
+.tabular-nums { font-variant-numeric: tabular-nums; }

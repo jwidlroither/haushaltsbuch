@@ -1,0 +1,48 @@
+version: '3.9'
+
+# Entwicklungs-Override
+# Verwendung: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Mit lokalem OIDC-Provider (Dex):
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile oidc-dev up
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend/src:/app/src:delegated
+    environment:
+      NODE_ENV: development
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend/src:/app/src:delegated
+    environment:
+      VITE_API_URL: http://localhost:3001/api
+    ports:
+      - "5173:5173"
+
+  # Lokaler OIDC-Provider für Entwicklung (Dex)
+  dex:
+    image: dexidp/dex:v2.38.0
+    container_name: haushaltsbuch-dex
+    restart: unless-stopped
+    volumes:
+      - ./dex-config.yaml:/etc/dex/config.yaml:ro
+    ports:
+      - "5556:5556"
+    networks:
+      - haushaltsbuch-net
+    profiles:
+      - oidc-dev
