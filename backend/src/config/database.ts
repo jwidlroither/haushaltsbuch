@@ -13,7 +13,7 @@ export const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-pool.on('error', (err) => {
+pool.on('error', (err: Error) => {
   logger.error('Unexpected DB pool error', { error: err.message });
 });
 

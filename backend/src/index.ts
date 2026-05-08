@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import session from 'express-session';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -32,7 +32,7 @@ app.use('/api/', rateLimit({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('combined', {
-  stream: { write: (msg) => logger.info(msg.trim()) },
+  stream: { write: (msg: string) => logger.info(msg.trim()) },
 }));
 
 // Session (for OIDC state/nonce)
@@ -52,7 +52,7 @@ app.use(session({
 app.use('/api', routes);
 
 // Health check
-app.get('/health', async (_req, res) => {
+app.get('/health', async (_req: Request, res: Response) => {
   try {
     await pool.query('SELECT 1');
     res.json({ status: 'ok', db: 'connected', timestamp: new Date().toISOString() });
@@ -62,7 +62,7 @@ app.get('/health', async (_req, res) => {
 });
 
 // 404
-app.use((_req, res) => {
+app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Not Found' });
 });
 

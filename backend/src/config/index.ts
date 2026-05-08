@@ -33,7 +33,6 @@ export const config = {
 
   jwt: {
     secret: required('JWT_SECRET'),
-    expiresIn: '24h',
   },
 
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost',

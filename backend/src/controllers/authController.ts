@@ -94,7 +94,7 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
     const token = jwt.sign(
       { userId, email, name },
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      { expiresIn: '24h' }
     );
 
     delete req.session.oidc;
