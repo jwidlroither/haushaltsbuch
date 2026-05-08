@@ -12,7 +12,7 @@ ENV VITE_OIDC_ISSUER_URL=$VITE_OIDC_ISSUER_URL
 ENV VITE_OIDC_REDIRECT_URI=$VITE_OIDC_REDIRECT_URI
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npm run build
 
