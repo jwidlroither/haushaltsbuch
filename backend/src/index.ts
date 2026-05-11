@@ -13,6 +13,10 @@ import { logger } from './utils/logger';
 
 const app = express();
 
+// REQUIRED: Trust the Nginx reverse proxy so that
+// req.protocol is 'https' and session cookies work correctly
+app.set('trust proxy', 1);
+
 // Security
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
@@ -35,15 +39,18 @@ app.use(morgan('combined', {
   stream: { write: (msg: string) => logger.info(msg.trim()) },
 }));
 
-// Session (for OIDC state/nonce)
+// Session (used only during OIDC login flow for state/nonce/codeVerifier)
 app.use(session({
   secret: config.session.secret,
   resave: false,
-  saveUninitialized: false,
+  // Must be true so the session is saved before the redirect to the OIDC provider
+  saveUninitialized: true,
   cookie: {
     httpOnly: true,
-    secure: config.node_env === 'production',
-    maxAge: 10 * 60 * 1000, // 10 min for OIDC flow
+    // secure:false works for HTTP (local/dev). Set to true only when using HTTPS.
+    secure: config.session.secureCookie,
+    maxAge: 10 * 60 * 1000, // 10 minutes – enough for the OIDC round-trip
+    // 'lax' allows the cookie to be sent on top-level navigations (redirects from OIDC provider)
     sameSite: 'lax',
   },
 }));
@@ -66,16 +73,14 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Not Found' });
 });
 
-// Error handler
+// Error handler (must be last)
 app.use(errorHandler);
 
 async function start(): Promise<void> {
   try {
-    // Verify DB connection
     await pool.query('SELECT NOW()');
     logger.info('Database connected');
 
-    // Pre-load OIDC configuration
     await getOidcClient();
     logger.info('OIDC client initialized');
 

@@ -29,6 +29,8 @@ export const config = {
 
   session: {
     secret: required('SESSION_SECRET'),
+    // Set SESSION_SECURE_COOKIE=true only when serving over HTTPS
+    secureCookie: process.env.SESSION_SECURE_COOKIE === 'true',
   },
 
   jwt: {

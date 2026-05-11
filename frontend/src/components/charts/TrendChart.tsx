@@ -1,5 +1,5 @@
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import type { MonthlyTrend } from '../../types';
 import { getMonthName, formatCurrency } from '../../utils/format';
