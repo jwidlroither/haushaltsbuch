@@ -27,10 +27,6 @@ export const config = {
     postLogoutRedirectUri: process.env.OIDC_POST_LOGOUT_REDIRECT_URI || 'http://localhost',
   },
 
-  session: {
-    secret: required('SESSION_SECRET'),
-  },
-
   jwt: {
     secret: required('JWT_SECRET'),
   },
