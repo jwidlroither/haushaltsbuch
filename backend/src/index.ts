@@ -1,5 +1,4 @@
 import express, { Request, Response } from 'express';
-import session from 'express-session';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -13,12 +12,13 @@ import { logger } from './utils/logger';
 
 const app = express();
 
-// REQUIRED: Trust the Nginx reverse proxy so that
-// req.protocol is 'https' and session cookies work correctly
+// Trust the Nginx reverse proxy (needed for correct IP / rate limiting)
 app.set('trust proxy', 1);
 
-// Security
+// Security headers
 app.use(helmet({ contentSecurityPolicy: false }));
+
+// CORS
 app.use(cors({
   origin: config.frontendUrl,
   credentials: true,
@@ -32,30 +32,21 @@ app.use('/api/', rateLimit({
   message: { error: 'Too many requests' },
 }));
 
-// Parsing & logging
+// Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Request logging
 app.use(morgan('combined', {
   stream: { write: (msg: string) => logger.info(msg.trim()) },
 }));
 
-// Session (used only during OIDC login flow for state/nonce/codeVerifier)
-app.use(session({
-  secret: config.session.secret,
-  resave: false,
-  // Must be true so the session is saved before the redirect to the OIDC provider
-  saveUninitialized: true,
-  cookie: {
-    httpOnly: true,
-    // secure:false works for HTTP (local/dev). Set to true only when using HTTPS.
-    secure: config.session.secureCookie,
-    maxAge: 10 * 60 * 1000, // 10 minutes – enough for the OIDC round-trip
-    // 'lax' allows the cookie to be sent on top-level navigations (redirects from OIDC provider)
-    sameSite: 'lax',
-  },
-}));
+// NOTE: No express-session needed.
+// OIDC state (state/nonce/codeVerifier) is stored in PostgreSQL (oidc_states table).
+// This makes the login flow completely cookie/proxy-independent and works
+// correctly with Pocket ID's HTTPS requirement.
 
-// Routes
+// API routes
 app.use('/api', routes);
 
 // Health check
@@ -73,7 +64,7 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Not Found' });
 });
 
-// Error handler (must be last)
+// Global error handler (must be last)
 app.use(errorHandler);
 
 async function start(): Promise<void> {
@@ -85,10 +76,7 @@ async function start(): Promise<void> {
     logger.info('OIDC client initialized');
 
     app.listen(config.port, () => {
-      logger.info(`Server running on port ${config.port}`, {
-        env: config.node_env,
-        port: config.port,
-      });
+      logger.info(`Server running`, { port: config.port, env: config.node_env });
     });
   } catch (err) {
     logger.error('Failed to start server', { error: (err as Error).message });

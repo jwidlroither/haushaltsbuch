@@ -27,12 +27,6 @@ export const config = {
     postLogoutRedirectUri: process.env.OIDC_POST_LOGOUT_REDIRECT_URI || 'http://localhost',
   },
 
-  session: {
-    secret: required('SESSION_SECRET'),
-    // Set SESSION_SECURE_COOKIE=true only when serving over HTTPS
-    secureCookie: process.env.SESSION_SECURE_COOKIE === 'true',
-  },
-
   jwt: {
     secret: required('JWT_SECRET'),
   },
