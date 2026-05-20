@@ -16,6 +16,8 @@ export interface Category {
   updated_at: string;
 }
 
+export type TransactionStatus = 'bezahlt' | 'ausstehend';
+
 export interface Transaction {
   id: string;
   user_id: string;
@@ -24,6 +26,7 @@ export interface Transaction {
   amount: number;
   description: string | null;
   date: string;
+  status: TransactionStatus;
   category_name?: string;
   category_icon?: string;
   category_color?: string;
@@ -36,36 +39,7 @@ export interface TransactionFilters {
   year?: number;
   category_id?: string;
   type?: 'income' | 'expense';
-  limit?: number;
-  offset?: number;
-}
-
-export interface Summary {
-  income: number;
-  expense: number;
-  balance: number;
-  byCategory: CategorySummary[];
-  monthlyTrend: MonthlyTrend[];
-}
-
-export interface CategorySummary {
-  name: string;
-  icon: string;
-  color: string;
-  type: 'income' | 'expense';
-  total: number;
-}
-
-export interface MonthlyTrend {
-  month: number;
-  year: number;
-  type: 'income' | 'expense';
-  total: number;
-}
-
-export interface ApiResponse<T> {
-  data: T;
-  total?: number;
+  status?: TransactionStatus;
   limit?: number;
   offset?: number;
 }
@@ -76,6 +50,76 @@ export interface CreateTransactionDto {
   description?: string;
   category_id?: string | null;
   date: string;
+  status?: TransactionStatus;
+}
+
+export interface Summary {
+  income: number;
+  expense: number;
+  paid: number;
+  pending: number;
+  balance: number;
+  byCategory: CategorySummary[];
+  monthlyTrend: MonthlyTrend[];
+}
+
+export interface CategorySummary {
+  name: string;
+  icon: string;
+  color: string;
+  type: 'income' | 'expense';
+  status: TransactionStatus;
+  total: number;
+}
+
+export interface MonthlyTrend {
+  month: number;
+  year: number;
+  type: 'income' | 'expense';
+  total: number;
+}
+
+export interface Budget {
+  id: string;
+  user_id: string;
+  category_id: string | null;
+  month: number;
+  year: number;
+  amount: number;
+  category_name?: string;
+  category_icon?: string;
+  category_color?: string;
+}
+
+export interface BudgetOverview {
+  month: number;
+  year: number;
+  totalBudget: number;
+  totalIncome: number;
+  paid: number;
+  pending: number;
+  available: number;
+  budgetBase: number;
+  usedPercent: number;
+  paidPercent: number;
+  pendingPercent: number;
+  categoryBudgets: Budget[];
+  byCategory: CategoryBudgetStat[];
+  pendingTransactions: Transaction[];
+}
+
+export interface CategoryBudgetStat {
+  category_id: string;
+  category_name: string;
+  category_icon: string;
+  category_color: string;
+  status: TransactionStatus;
+  total: number;
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  total?: number;
 }
 
 export interface CreateCategoryDto {

@@ -4,7 +4,7 @@ import { query } from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 
 const CategorySchema = z.object({
-  name: z.string().min(1).max(100),
+  name: z.string().trim().min(1).max(100),
   icon: z.string().max(10).default('📦'),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#6366f1'),
   type: z.enum(['income', 'expense', 'both']).default('both'),

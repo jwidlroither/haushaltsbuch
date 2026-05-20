@@ -1,35 +1,65 @@
+import { z } from 'zod';
 import dotenv from 'dotenv';
 dotenv.config();
 
-function required(key: string): string {
-  const val = process.env[key];
-  if (!val) throw new Error(`Missing required env var: ${key}`);
-  return val;
+// Validate all required env vars at startup – clear error messages
+const EnvSchema = z.object({
+  NODE_ENV:                    z.string().default('development'),
+  PORT:                        z.string().default('3001'),
+  LOG_LEVEL:                   z.enum(['error','warn','info','http','debug']).default('info'),
+  DB_HOST:                     z.string().default('localhost'),
+  DB_PORT:                     z.string().default('5432'),
+  DB_NAME:                     z.string().default('haushaltsbuch'),
+  DB_USER:                     z.string().default('haushalt'),
+  DB_PASSWORD:                 z.string().min(1, 'DB_PASSWORD is required'),
+  OIDC_ISSUER_URL:             z.string().url('OIDC_ISSUER_URL must be a valid URL'),
+  OIDC_CLIENT_ID:              z.string().min(1, 'OIDC_CLIENT_ID is required'),
+  OIDC_CLIENT_SECRET:          z.string().min(1, 'OIDC_CLIENT_SECRET is required'),
+  OIDC_REDIRECT_URI:           z.string().url('OIDC_REDIRECT_URI must be a valid URL'),
+  OIDC_POST_LOGOUT_REDIRECT_URI: z.string().url().default('http://localhost'),
+  JWT_SECRET:                  z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+  FRONTEND_URL:                z.string().url().default('http://localhost'),
+});
+
+function validateEnv() {
+  const result = EnvSchema.safeParse(process.env);
+  if (!result.success) {
+    console.error('\n❌ Invalid environment variables:\n');
+    result.error.errors.forEach(e => {
+      console.error(`   ${e.path.join('.')}: ${e.message}`);
+    });
+    console.error('\nCheck your .env file and try again.\n');
+    process.exit(1);
+  }
+  return result.data;
 }
 
+const env = validateEnv();
+
 export const config = {
-  node_env: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT || '3001', 10),
+  node_env: env.NODE_ENV,
+  port:     parseInt(env.PORT, 10),
+  logLevel: env.LOG_LEVEL,
 
   db: {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432', 10),
-    name: process.env.DB_NAME || 'haushaltsbuch',
-    user: process.env.DB_USER || 'haushalt',
-    password: process.env.DB_PASSWORD || 'securepassword',
+    host:     env.DB_HOST,
+    port:     parseInt(env.DB_PORT, 10),
+    name:     env.DB_NAME,
+    user:     env.DB_USER,
+    password: env.DB_PASSWORD,
   },
 
   oidc: {
-    issuerUrl: required('OIDC_ISSUER_URL'),
-    clientId: required('OIDC_CLIENT_ID'),
-    clientSecret: required('OIDC_CLIENT_SECRET'),
-    redirectUri: required('OIDC_REDIRECT_URI'),
-    postLogoutRedirectUri: process.env.OIDC_POST_LOGOUT_REDIRECT_URI || 'http://localhost',
+    issuerUrl:              env.OIDC_ISSUER_URL,
+    clientId:               env.OIDC_CLIENT_ID,
+    clientSecret:           env.OIDC_CLIENT_SECRET,
+    redirectUri:            env.OIDC_REDIRECT_URI,
+    postLogoutRedirectUri:  env.OIDC_POST_LOGOUT_REDIRECT_URI,
   },
 
   jwt: {
-    secret: required('JWT_SECRET'),
+    secret: env.JWT_SECRET,
   },
 
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost',
+  frontendUrl: env.FRONTEND_URL,
 };
