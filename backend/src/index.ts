@@ -30,18 +30,22 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 }));
 
-// Stricter rate limit for auth endpoints (brute-force protection)
+// Auth login: 30 attempts per 5 min – blocks brute-force, allows normal retries
 app.use('/api/auth/login', rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  message: { error: 'Too many login attempts, please wait a minute.' },
+  windowMs: 5 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Zu viele Anmeldeversuche. Bitte warte 5 Minuten.' },
 }));
 
-// General API rate limit
+// General API rate limit: 300 req / 15 min per IP
 app.use('/api/', rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
-  message: { error: 'Too many requests' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Zu viele Anfragen. Bitte kurz warten.' },
 }));
 
 // Body parsing
