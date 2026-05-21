@@ -75,3 +75,44 @@ export const budgetApi = {
 };
 
 export default api;
+
+export const recurringApi = {
+  list:        () => api.get<ApiResponse<import('../types').RecurringTransaction[]>>('/recurring'),
+  create:      (d: import('../types').CreateRecurringDto) =>
+    api.post<ApiResponse<import('../types').RecurringTransaction>>('/recurring', d),
+  update:      (id: string, d: Partial<import('../types').CreateRecurringDto>) =>
+    api.put<ApiResponse<import('../types').RecurringTransaction>>(`/recurring/${id}`, d),
+  delete:      (id: string) => api.delete(`/recurring/${id}`),
+  toggle:      (id: string) =>
+    api.patch<ApiResponse<import('../types').RecurringTransaction>>(`/recurring/${id}/toggle`),
+  materialize: (month: number, year: number) =>
+    api.get<{ created: number; month: number; year: number }>('/recurring/materialize', { params: { month, year } }),
+  preview:     (months = 3) =>
+    api.get<ApiResponse<import('../types').UpcomingPreviewItem[]>>('/recurring/preview', { params: { months } }),
+};
+
+export const goalsApi = {
+  list:    () => api.get<ApiResponse<import('../types').SavingsGoal[]>>('/goals'),
+  create:  (d: import('../types').CreateGoalDto) =>
+    api.post<ApiResponse<import('../types').SavingsGoal>>('/goals', d),
+  update:  (id: string, d: Partial<import('../types').CreateGoalDto>) =>
+    api.put<ApiResponse<import('../types').SavingsGoal>>(`/goals/${id}`, d),
+  delete:  (id: string) => api.delete(`/goals/${id}`),
+  deposit: (id: string, amount: number) =>
+    api.post<ApiResponse<import('../types').SavingsGoal> & { completed: boolean }>(`/goals/${id}/deposit`, { amount }),
+};
+
+export function downloadExport(type: 'csv' | 'pdf', params: Record<string, unknown> = {}) {
+  const base = import.meta.env.VITE_API_URL || '/api';
+  const token = localStorage.getItem('auth_token');
+  const qs = new URLSearchParams(Object.entries(params).filter(([,v])=>v!=null).map(([k,v])=>[k,String(v)]));
+  fetch(`${base}/export/${type}?${qs}`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(r => r.blob())
+    .then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+}

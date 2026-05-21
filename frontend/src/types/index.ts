@@ -128,3 +128,41 @@ export interface CreateCategoryDto {
   color: string;
   type: 'income' | 'expense' | 'both';
 }
+
+export type RecurringInterval = 'monthly' | 'weekly' | 'yearly' | 'quarterly';
+
+export interface RecurringTransaction {
+  id: string; user_id: string; category_id: string | null;
+  type: 'income' | 'expense'; amount: number; description: string | null;
+  interval: RecurringInterval; day_of_month: number | null;
+  start_date: string; end_date: string | null; is_active: boolean;
+  last_created: string | null;
+  category_name?: string; category_icon?: string; category_color?: string;
+  created_at: string;
+}
+
+export interface UpcomingPreviewItem {
+  date: string; type: 'income' | 'expense'; amount: number;
+  description: string | null; category_name: string | null;
+  category_icon: string | null; category_color: string | null;
+}
+
+export interface CreateRecurringDto {
+  type: 'income' | 'expense'; amount: number; description?: string;
+  category_id?: string | null; interval: RecurringInterval;
+  day_of_month?: number | null; start_date: string; end_date?: string | null;
+}
+
+export interface SavingsGoal {
+  id: string; user_id: string; name: string; icon: string; color: string;
+  target_amount: number; current_amount: number;
+  deadline: string | null; is_completed: boolean; notes: string | null;
+  progress_percent: number; days_remaining: number | null;
+  created_at: string; updated_at: string;
+}
+
+export interface CreateGoalDto {
+  name: string; icon: string; color: string;
+  target_amount: number; current_amount?: number;
+  deadline?: string | null; notes?: string | null;
+}

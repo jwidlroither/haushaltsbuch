@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { transactionsApi, budgetApi, categoriesApi } from '../services/api';
+import { transactionsApi, budgetApi, categoriesApi, downloadExport } from '../services/api';
 import type { Summary, Transaction, BudgetOverview, Category } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -8,6 +8,8 @@ import { useMonthNav } from '../hooks/useMonthNav';
 import SummaryCards from '../components/dashboard/SummaryCards';
 import BudgetBar from '../components/dashboard/BudgetBar';
 import PendingList from '../components/dashboard/PendingList';
+import UpcomingWidget from '../components/dashboard/UpcomingWidget';
+import GoalsWidget from '../components/dashboard/GoalsWidget';
 import CategoryChart from '../components/charts/CategoryChart';
 import TrendChart from '../components/charts/TrendChart';
 import TransactionItem from '../components/transactions/TransactionItem';
@@ -31,9 +33,8 @@ export default function DashboardPage() {
   const [showForm,   setShowForm]   = useState(false);
   const [showBudget, setShowBudget] = useState(false);
   const [editing,    setEditing]    = useState<Transaction | undefined>();
-  const [chartTab,   setChartTab]   = useState<'expense' | 'income'>('expense');
+  const [chartTab,   setChartTab]   = useState<'expense'|'income'>('expense');
 
-  // Open "new transaction" from PWA shortcut
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('action') === 'new') {
       setShowForm(true);
@@ -53,30 +54,21 @@ export default function DashboardPage() {
       setOverview(ovRes.data);
       setRecent(txRes.data.data);
       setCategories(catRes.data.data);
-    } catch {
-      toast.error('Daten konnten nicht geladen werden.');
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error('Daten konnten nicht geladen werden.'); }
+    finally { setLoading(false); }
   }, [month, year, toast]);
 
   useEffect(() => { load(); }, [load]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Transaktion wirklich löschen?')) return;
-    try {
-      await transactionsApi.delete(id);
-      toast.success('Transaktion gelöscht.');
-      load();
-    } catch { toast.error('Löschen fehlgeschlagen.'); }
+    try { await transactionsApi.delete(id); toast.success('Gelöscht.'); load(); }
+    catch { toast.error('Löschen fehlgeschlagen.'); }
   };
 
   const handleMarkPaid = async (id: string) => {
-    try {
-      await transactionsApi.markPaid(id);
-      toast.success('Als bezahlt markiert ✓');
-      load();
-    } catch { toast.error('Aktion fehlgeschlagen.'); }
+    try { await transactionsApi.markPaid(id); toast.success('Als bezahlt markiert ✓'); load(); }
+    catch { toast.error('Aktion fehlgeschlagen.'); }
   };
 
   const hour = new Date().getHours();
@@ -94,22 +86,23 @@ export default function DashboardPage() {
             {user?.name?.split(' ')[0] || 'Willkommen'}
           </h1>
         </div>
-        <button onClick={() => { setEditing(undefined); setShowForm(true); }}
-          className="btn-primary">
-          + Neu
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => downloadExport('pdf', { month, year })}
+            title="PDF Monatsreport herunterladen"
+            className="btn-ghost text-sm px-3">
+            ↓ PDF
+          </button>
+          <button onClick={() => { setEditing(undefined); setShowForm(true); }} className="btn-primary">
+            + Neu
+          </button>
+        </div>
       </div>
 
       {/* Month selector */}
       <div className="animate-on-mount stagger-1">
-        <MonthSelector
-          month={month} year={year}
-          onPrev={() => shiftMonth(-1)}
-          onNext={() => shiftMonth(1)}
-          disableNext={isCurrentMonth}
-          direction={direction}
-          loading={loading}
-        />
+        <MonthSelector month={month} year={year}
+          onPrev={() => shiftMonth(-1)} onNext={() => shiftMonth(1)}
+          disableNext={isCurrentMonth} direction={direction} loading={loading} />
       </div>
 
       {/* Budget Bar */}
@@ -118,14 +111,20 @@ export default function DashboardPage() {
       {/* KPI Cards */}
       {summary && <SummaryCards summary={summary} />}
 
-      {/* Ausstehende Ausgaben */}
-      {overview && overview.pendingTransactions.length > 0 && (
-        <PendingList
-          transactions={overview.pendingTransactions}
-          onMarkPaid={handleMarkPaid}
-          onEdit={t => { setEditing(t); setShowForm(true); }}
-        />
-      )}
+      {/* Two-column: Pending + Upcoming */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="space-y-4">
+          {overview && overview.pendingTransactions.length > 0 && (
+            <PendingList
+              transactions={overview.pendingTransactions}
+              onMarkPaid={handleMarkPaid}
+              onEdit={t => { setEditing(t); setShowForm(true); }}
+            />
+          )}
+          <UpcomingWidget month={month} year={year} />
+        </div>
+        <GoalsWidget />
+      </div>
 
       {/* Charts */}
       {summary && (
@@ -163,32 +162,25 @@ export default function DashboardPage() {
         <div className="px-2 py-2">
           {recent.length === 0 ? (
             <div className="text-center py-8 text-[var(--ink-faint)] text-sm">
-              Noch keine Transaktionen in diesem Monat.{' '}
-              <button onClick={() => setShowForm(true)}
-                className="text-[var(--accent)] hover:underline">
+              Noch keine Transaktionen.{' '}
+              <button onClick={() => setShowForm(true)} className="text-[var(--accent)] hover:underline">
                 Erste hinzufügen
               </button>
             </div>
-          ) : (
-            recent.map((t, i) => (
-              <TransactionItem key={t.id} transaction={t} index={i}
-                onEdit={tx => { setEditing(tx); setShowForm(true); }}
-                onDelete={handleDelete}
-                onMarkPaid={handleMarkPaid}
-              />
-            ))
-          )}
+          ) : recent.map((t, i) => (
+            <TransactionItem key={t.id} transaction={t} index={i}
+              onEdit={tx => { setEditing(tx); setShowForm(true); }}
+              onDelete={handleDelete} onMarkPaid={handleMarkPaid} />
+          ))}
         </div>
       </div>
 
       <Modal isOpen={showForm}
         onClose={() => { setShowForm(false); setEditing(undefined); }}
         title={editing ? 'Transaktion bearbeiten' : 'Neue Transaktion'}>
-        <TransactionForm
-          transaction={editing}
+        <TransactionForm transaction={editing}
           onSuccess={() => { setShowForm(false); setEditing(undefined); load(); }}
-          onCancel={() => { setShowForm(false); setEditing(undefined); }}
-        />
+          onCancel={() => { setShowForm(false); setEditing(undefined); }} />
       </Modal>
 
       <BudgetModal isOpen={showBudget} onClose={() => setShowBudget(false)}
