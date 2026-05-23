@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { authApi } from '../services/api';
+import { useToast } from './ToastContext';
 import type { User } from '../types';
 
 interface AuthContextType {
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   const fetchUser = useCallback(async () => {
     const token = localStorage.getItem('auth_token');
@@ -32,20 +34,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { fetchUser(); }, [fetchUser]);
 
-  const login = () => {
-    window.location.href = authApi.getLoginUrl();
-  };
+  // Listen for token expiry dispatched by the API interceptor
+  useEffect(() => {
+    const handler = () => {
+      toast.warning('Deine Sitzung ist abgelaufen. Du wirst zur Anmeldung weitergeleitet…', 1400);
+      setUser(null);
+    };
+    window.addEventListener('auth:expired', handler);
+    return () => window.removeEventListener('auth:expired', handler);
+  }, [toast]);
+
+  const login = () => { window.location.href = authApi.getLoginUrl(); };
 
   const logout = async () => {
     try {
       const res = await authApi.logout();
       localStorage.removeItem('auth_token');
       setUser(null);
-      if (res.data.logoutUrl) {
-        window.location.href = res.data.logoutUrl;
-      } else {
-        window.location.href = '/login';
-      }
+      if (res.data.logoutUrl) window.location.href = res.data.logoutUrl;
+      else window.location.href = '/login';
     } catch {
       localStorage.removeItem('auth_token');
       setUser(null);
@@ -59,9 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchUser]);
 
   return (
-    <AuthContext.Provider value={{
-      user, isLoading, isAuthenticated: !!user, login, logout, setToken
-    }}>
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, login, logout, setToken }}>
       {children}
     </AuthContext.Provider>
   );

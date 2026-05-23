@@ -78,3 +78,16 @@ INSERT INTO categories (user_id, name, icon, color, type, is_system) VALUES
   (NULL, 'Geschenke erhalten','🎁', '#db2777', 'income',  TRUE),
   (NULL, 'Sonstige Einnahmen','💰', '#7c3aed', 'income',  TRUE)
 ON CONFLICT DO NOTHING;
+
+-- OIDC State Store (ersetzt express-session, überlebt Proxy/Cookie-Probleme)
+CREATE TABLE IF NOT EXISTS oidc_states (
+    id VARCHAR(64) PRIMARY KEY,
+    state VARCHAR(255) NOT NULL,
+    nonce VARCHAR(255) NOT NULL,
+    code_verifier VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Automatisch nach 15 Minuten bereinigen (via Trigger oder Cron)
+-- Wird beim Callback manuell gelöscht
+CREATE INDEX IF NOT EXISTS idx_oidc_states_created_at ON oidc_states(created_at);
