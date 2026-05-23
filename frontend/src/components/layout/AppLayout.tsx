@@ -71,17 +71,15 @@ export default function AppLayout() {
         </div>
       </aside>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <main className="flex-1 overflow-y-auto">
-          <header className="lg:hidden flex items-center justify-between px-4 py-3
-            bg-[var(--surface)] border-b border-[var(--border)]">
-            <button onClick={()=>setOpen(true)} className="p-2 rounded-lg text-[var(--ink-muted)] hover:bg-[var(--surface-overlay)]">☰</button>
-            <span className="font-display text-[var(--ink)]">Haushaltsbuch</span>
-            <button onClick={toggleTheme} className="p-2 rounded-lg text-[var(--ink-muted)] hover:bg-[var(--surface-overlay)]">
-              {theme==='dark'?'☀':'☽'}
-            </button>
-          </header>
-          <Outlet />
-        </main>
+        <header className="lg:hidden flex items-center justify-between px-4 py-3
+          bg-[var(--surface)] border-b border-[var(--border)]">
+          <button onClick={()=>setOpen(true)} className="p-2 rounded-lg text-[var(--ink-muted)] hover:bg-[var(--surface-overlay)]">☰</button>
+          <span className="font-display text-[var(--ink)]">Haushaltsbuch</span>
+          <button onClick={toggleTheme} className="p-2 rounded-lg text-[var(--ink-muted)] hover:bg-[var(--surface-overlay)]">
+            {theme==='dark'?'☀':'☽'}
+          </button>
+        </header>
+        <main className="flex-1 overflow-y-auto"><Outlet /></main>
       </div>
     </div>
   );
