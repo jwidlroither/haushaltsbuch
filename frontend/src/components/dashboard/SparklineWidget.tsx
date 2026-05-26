@@ -168,7 +168,14 @@ export default function SparklineWidget() {
                 <stop offset="100%" stopColor="#ef4444" stopOpacity={0}    />
               </linearGradient>
             </defs>
-            <YAxis domain={['auto', 'auto']} hide />
+            <YAxis
+              domain={([dataMin, dataMax]: [number, number]) => {
+                const max = Math.max(Math.abs(dataMin), Math.abs(dataMax), 1);
+                const pad = max * 0.15;
+                return [0, dataMax + pad];
+              }}
+              hide
+            />
             {showXAxis && (
               <XAxis
                 dataKey="period"
