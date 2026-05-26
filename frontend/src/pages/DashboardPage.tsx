@@ -17,6 +17,7 @@ import MonthSelector from '../components/ui/MonthSelector';
 import Modal from '../components/ui/Modal';
 import TransactionForm from '../components/transactions/TransactionForm';
 import BudgetModal from '../components/ui/BudgetModal';
+import SparklineWidget from '../components/dashboard/SparklineWidget';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 
 export default function DashboardPage() {
@@ -110,6 +111,9 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       {summary && <SummaryCards summary={summary} />}
+
+      {/* Cashflow Sparkline */}
+      <SparklineWidget />
 
       {/* Two-column: Pending + Upcoming */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { initiateLogin, handleCallback, logout, getMe } from '../controllers/authController';
-import { getTransactions, createTransaction, updateTransaction, deleteTransaction, getSummary, markAsPaid } from '../controllers/transactionsController';
+import { getTransactions, createTransaction, updateTransaction, deleteTransaction, getSummary, markAsPaid, getSparkline } from '../controllers/transactionsController';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../controllers/categoriesController';
 import { getBudgets, upsertBudget, deleteBudget, getBudgetOverview } from '../controllers/budgetController';
 import { getRecurring, createRecurring, updateRecurring, deleteRecurring, toggleRecurring, triggerMaterialize, getUpcomingPreview } from '../controllers/recurringController';
@@ -15,6 +15,7 @@ router.get('/auth/callback', handleCallback);
 router.post('/auth/logout',  authenticate, logout);
 router.get('/auth/me',       authenticate, getMe);
 
+router.get('/transactions/sparkline',  authenticate, getSparkline);
 router.get('/transactions/summary',    authenticate, getSummary);
 router.get('/transactions',            authenticate, getTransactions);
 router.post('/transactions',           authenticate, createTransaction);

@@ -166,3 +166,12 @@ export interface CreateGoalDto {
   target_amount: number; current_amount?: number;
   deadline?: string | null; notes?: string | null;
 }
+
+export interface SparklinePoint {
+  period: string;
+  income: number;
+  expense: number;
+  balance: number;
+}
+
+export type SparklineRange = '7d' | 'month' | 'year' | 'all';
