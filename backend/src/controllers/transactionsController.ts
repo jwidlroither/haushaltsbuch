@@ -144,8 +144,12 @@ export async function getSparkline(req: Request, res: Response, next: NextFuncti
     const userId = req.user!.userId;
     const range = (req.query.range as string) || 'month';
 
-    const truncUnit: Record<string, string> = { '7d': 'day', 'month': 'day', 'year': 'week', 'all': 'month' };
-    const days:      Record<string, number> = { '7d': 7,     'month': 30,    'year': 365,   'all': 0 };
+    // 7d   → daily   (7 Tage     = wöchentliche Ansicht,   7 Datenpunkte)
+    // month→ weekly  (30 Tage    = monatliche Ansicht,   ~4 Datenpunkte)
+    // year → monthly (365 Tage   = jährliche Ansicht,    12 Datenpunkte)
+    // all  → yearly  (gesamt     = gesamter Zeitraum,     N Datenpunkte)
+    const truncUnit: Record<string, string> = { '7d': 'day', 'month': 'week', 'year': 'month', 'all': 'year' };
+    const days:      Record<string, number> = { '7d': 7,     'month': 30,     'year': 365,     'all': 0 };
 
     const trunc = truncUnit[range] ?? 'day';
     const d     = days[range]     ?? 30;

@@ -21,13 +21,10 @@ const RANGES: { key: Range; label: string }[] = [
 
 function fmtPeriod(period: string, range: Range): string {
   const d = new Date(period);
-  if (range === '7d' || range === 'month') {
-    return d.toLocaleDateString('de-AT', { day: '2-digit', month: 'short' });
-  }
-  if (range === 'year') {
-    return d.toLocaleDateString('de-AT', { day: '2-digit', month: 'short' });
-  }
-  return d.toLocaleDateString('de-AT', { month: 'short', year: '2-digit' });
+  if (range === '7d')    return d.toLocaleDateString('de-AT', { day: '2-digit', month: 'short' });
+  if (range === 'month') return d.toLocaleDateString('de-AT', { day: '2-digit', month: 'short' });
+  if (range === 'year')  return d.toLocaleDateString('de-AT', { month: 'short', year: '2-digit' });
+  return d.toLocaleDateString('de-AT', { year: 'numeric' });
 }
 
 const SparkTooltip = ({ active, payload, range }: {
@@ -87,7 +84,7 @@ export default function SparklineWidget() {
   const totalExpense = data.reduce((s, d) => s + d.expense, 0);
   const balance      = totalIncome - totalExpense;
 
-  const showXAxis = data.length > 1 && (range === '7d' || range === 'month');
+  const showXAxis = data.length > 1;
 
   return (
     <div className="card p-5 animate-on-mount">
