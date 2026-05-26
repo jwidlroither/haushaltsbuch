@@ -138,3 +138,38 @@ export async function getSummary(req: Request, res: Response, next: NextFunction
     res.json({ income, expense: paid+pending, paid, pending, balance: income-paid-pending, byCategory, monthlyTrend });
   } catch (err) { next(err); }
 }
+
+export async function getSparkline(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+    const range = (req.query.range as string) || 'month';
+
+    const truncUnit: Record<string, string> = { '7d': 'day', 'month': 'day', 'year': 'week', 'all': 'month' };
+    const days:      Record<string, number> = { '7d': 7,     'month': 30,    'year': 365,   'all': 0 };
+
+    const trunc = truncUnit[range] ?? 'day';
+    const d     = days[range]     ?? 30;
+
+    const rows = await query<{ period: string; income: string; expense: string }>(
+      `SELECT
+         date_trunc($1, date)::date::text AS period,
+         COALESCE(SUM(CASE WHEN type='income'  THEN amount ELSE 0 END), 0) AS income,
+         COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END), 0) AS expense
+       FROM transactions
+       WHERE user_id=$2
+         AND ($3::int = 0 OR date >= CURRENT_DATE - make_interval(days => $3::int))
+       GROUP BY 1
+       ORDER BY 1 ASC`,
+      [trunc, userId, d]
+    );
+
+    res.json({
+      data: rows.map(r => ({
+        period:  r.period,
+        income:  parseFloat(r.income),
+        expense: parseFloat(r.expense),
+        balance: parseFloat(r.income) - parseFloat(r.expense),
+      })),
+    });
+  } catch (err) { next(err); }
+}
