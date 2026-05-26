@@ -69,7 +69,7 @@ export default function TransactionsPage() {
     <div className="p-6 max-w-3xl mx-auto space-y-5">
       <div className="flex items-center justify-between animate-on-mount">
         <h1 className="font-display text-3xl text-[var(--ink)]">Transaktionen</h1>
-        <button onClick={() => downloadExport('csv', { month, year, type: typeFilter || undefined, status: statusFilter || undefined })} className="btn-secondary text-sm" title="Als CSV exportieren">↓ CSV</button>
+        <button onClick={() => downloadExport('csv', { month, year, type: typeFilter || undefined, status: statusFilter || undefined }).catch(() => toast.error('Export fehlgeschlagen.'))} className="btn-secondary text-sm" title="Als CSV exportieren">↓ CSV</button>
         <button onClick={() => { setEditing(undefined); setShowForm(true); }}
           className="btn-primary">
           + Neu

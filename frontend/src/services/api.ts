@@ -102,17 +102,16 @@ export const goalsApi = {
     api.post<ApiResponse<import('../types').SavingsGoal> & { completed: boolean }>(`/goals/${id}/deposit`, { amount }),
 };
 
-export function downloadExport(type: 'csv' | 'pdf', params: Record<string, unknown> = {}) {
+export async function downloadExport(type: 'csv' | 'pdf', params: Record<string, unknown> = {}): Promise<void> {
   const base = import.meta.env.VITE_API_URL || '/api';
   const token = localStorage.getItem('auth_token');
   const qs = new URLSearchParams(Object.entries(params).filter(([,v])=>v!=null).map(([k,v])=>[k,String(v)]));
-  fetch(`${base}/export/${type}?${qs}`, { headers: { Authorization: `Bearer ${token}` } })
-    .then(r => r.blob())
-    .then(blob => {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = '';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    });
+  const res = await fetch(`${base}/export/${type}?${qs}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`Export fehlgeschlagen (${res.status})`);
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }

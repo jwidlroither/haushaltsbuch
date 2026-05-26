@@ -87,7 +87,7 @@ export default function DashboardPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => downloadExport('pdf', { month, year })}
+          <button onClick={() => downloadExport('pdf', { month, year }).catch(() => toast.error('PDF-Export fehlgeschlagen.'))}
             title="PDF Monatsreport herunterladen"
             className="btn-ghost text-sm px-3">
             ↓ PDF

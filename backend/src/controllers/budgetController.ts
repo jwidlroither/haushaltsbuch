@@ -32,14 +32,31 @@ export async function upsertBudget(req: Request, res: Response, next: NextFuncti
   try {
     const userId = req.user!.userId;
     const data = BudgetSchema.parse(req.body);
-    const rows = await query(
-      `INSERT INTO budgets (user_id, category_id, month, year, amount)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (user_id, month, year, category_id)
-         DO UPDATE SET amount = EXCLUDED.amount
-       RETURNING *`,
-      [userId, data.category_id ?? null, data.month, data.year, data.amount]
-    );
+    const categoryId = data.category_id ?? null;
+
+    // PostgreSQL treats NULL != NULL in UNIQUE constraints, so ON CONFLICT on
+    // (user_id, month, year, category_id) never fires when category_id IS NULL.
+    // We use the partial unique indexes from migration 004 instead.
+    let rows: Record<string, unknown>[];
+    if (categoryId === null) {
+      rows = await query(
+        `INSERT INTO budgets (user_id, category_id, month, year, amount)
+         VALUES ($1, NULL, $2, $3, $4)
+         ON CONFLICT (user_id, month, year) WHERE category_id IS NULL
+           DO UPDATE SET amount = EXCLUDED.amount
+         RETURNING *`,
+        [userId, data.month, data.year, data.amount]
+      );
+    } else {
+      rows = await query(
+        `INSERT INTO budgets (user_id, category_id, month, year, amount)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (user_id, month, year, category_id) WHERE category_id IS NOT NULL
+           DO UPDATE SET amount = EXCLUDED.amount
+         RETURNING *`,
+        [userId, categoryId, data.month, data.year, data.amount]
+      );
+    }
     res.status(201).json({ data: rows[0] });
   } catch (err) { next(err); }
 }

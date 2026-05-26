@@ -112,7 +112,8 @@ export async function exportPdf(req: Request, res: Response, next: NextFunction)
     // ── Build PDF into buffer ──────────────────────────────────
     const chunks: Buffer[] = [];
     await new Promise<void>((resolve, reject) => {
-      const doc = new PDFDocument({ size:'A4', margin:50, info:{
+      // bufferPages:true is required so switchToPage() works for the footer loop
+      const doc = new PDFDocument({ size:'A4', margin:50, bufferPages: true, info:{
         Title: `Haushaltsbuch – ${mn}`,
         Author: user?.name ?? 'Haushaltsbuch',
       }});

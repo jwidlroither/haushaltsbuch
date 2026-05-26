@@ -67,22 +67,20 @@ export async function deleteGoal(req: Request, res: Response, next: NextFunction
   } catch (err) { next(err); }
 }
 
-/** Einzahlung auf ein Ziel */
+/** Einzahlung auf ein Ziel – atomare SQL-Operation verhindert Race Conditions */
 export async function depositToGoal(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { id } = req.params;
     const { amount } = DepositSchema.parse(req.body);
-    const ex = await query<{ current_amount:string; target_amount:string }>(
-      'SELECT current_amount,target_amount FROM savings_goals WHERE id=$1 AND user_id=$2',
-      [id, req.user!.userId]
+    const rows = await query<{ is_completed: boolean }>(
+      `UPDATE savings_goals
+       SET current_amount = LEAST(current_amount + $1, target_amount),
+           is_completed   = LEAST(current_amount + $1, target_amount) >= target_amount
+       WHERE id=$2 AND user_id=$3
+       RETURNING *`,
+      [amount, id, req.user!.userId]
     );
-    if (!ex.length) throw new AppError(404,'Goal not found');
-    const newAmount = Math.min(parseFloat(ex[0].current_amount) + amount, parseFloat(ex[0].target_amount));
-    const isCompleted = newAmount >= parseFloat(ex[0].target_amount);
-    const rows = await query(
-      `UPDATE savings_goals SET current_amount=$1, is_completed=$2 WHERE id=$3 RETURNING *`,
-      [newAmount, isCompleted, id]
-    );
-    res.json({ data: rows[0], completed: isCompleted });
+    if (!rows.length) throw new AppError(404, 'Goal not found');
+    res.json({ data: rows[0], completed: rows[0].is_completed });
   } catch (err) { next(err); }
 }

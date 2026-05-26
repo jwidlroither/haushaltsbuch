@@ -8,9 +8,11 @@ export const pool = new Pool({
   database: config.db.name,
   user:     config.db.user,
   password: config.db.password,
-  max: 20,
-  idleTimeoutMillis:    30000,
-  connectionTimeoutMillis: 3000,
+  max: 10,                          // 20 is too high for a single-instance app
+  min: 2,                           // keep 2 warm connections ready
+  idleTimeoutMillis:    60000,      // release idle connections after 60s
+  connectionTimeoutMillis: 5000,    // wait up to 5s for a connection
+  statement_timeout: 30000,         // kill runaway queries after 30s
 });
 
 pool.on('error', (err: Error) => {
