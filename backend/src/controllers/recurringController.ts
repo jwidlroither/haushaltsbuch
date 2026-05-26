@@ -121,7 +121,7 @@ export async function getUpcomingPreview(req: Request, res: Response, next: Next
     const months = parseInt((req.query.months as string) ?? '3');
     const active = await query<{
       type:string; amount:string; description:string|null; interval:string;
-      day_of_month:number|null; end_date:string|null;
+      day_of_month:number|null; start_date:string; end_date:string|null;
       category_name:string|null; category_icon:string|null; category_color:string|null;
     }>(
       `SELECT r.*, c.name as category_name, c.icon as category_icon, c.color as category_color
@@ -135,7 +135,9 @@ export async function getUpcomingPreview(req: Request, res: Response, next: Next
       const d = new Date(now.getFullYear(), now.getMonth()+m, 1);
       const month = d.getMonth()+1, year = d.getFullYear();
       const daysInMonth = new Date(year, month, 0).getDate();
+      const monthEnd = new Date(year, month - 1, daysInMonth);
       for (const r of active) {
+        if (new Date(r.start_date) > monthEnd) continue;
         if (r.end_date && new Date(r.end_date) < d) continue;
         const day = Math.min(r.day_of_month ?? 1, daysInMonth);
         preview.push({

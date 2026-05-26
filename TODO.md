@@ -32,3 +32,8 @@
 - [ ] Integration-Tests (Supertest mit Test-DB)
 - [ ] i18n-Vorbereitung (Sprachstruktur, DE vollständig)
 - [ ] Multi-Device: Websocket-Invalidierung via React Query
+
+## 🔴 Neue Bugs (gemeldet 2026-05-23)
+- [x] PDF-Export: Datei beschädigt → Fix: PDF vollständig in Buffer schreiben, dann senden
+- [x] PDF-Dateiname: jetzt haushaltsbuch-mai-2026.pdf (DE Monatsname)
+- [x] Mobile: Header scrollt jetzt mit dem Inhalt (innerhalb des scroll-Containers)
