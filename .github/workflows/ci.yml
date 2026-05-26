@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-check:
+    name: Backend – TypeScript & Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Audit for vulnerabilities
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  frontend-check:
+    name: Frontend – TypeScript & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: /api
+          VITE_OIDC_CLIENT_ID: ci-test-client
+          VITE_OIDC_ISSUER_URL: https://example.com
+          VITE_OIDC_REDIRECT_URI: http://localhost/api/auth/callback
+
+      - name: Audit for vulnerabilities
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  docker-build:
+    name: Docker – Build Test
+    runs-on: ubuntu-latest
+    needs: [backend-check, frontend-check]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build ./backend -t haushaltsbuch-backend:ci
+
+      - name: Build frontend image
+        run: |
+          docker build ./frontend \
+            --build-arg VITE_API_URL=/api \
+            --build-arg VITE_OIDC_CLIENT_ID=ci-test \
+            --build-arg VITE_OIDC_ISSUER_URL=https://example.com \
+            --build-arg VITE_OIDC_REDIRECT_URI=http://localhost/api/auth/callback \
+            -t haushaltsbuch-frontend:ci
