@@ -13,6 +13,7 @@
   --accent:          #c9611f;
   --accent-hover:    #b5561c;
   --accent-muted:    #f6ece3;
+  --accent-ring:     rgba(201, 97, 31, 0.25);
   --success:         #16a34a;
   --success-muted:   #dcfce7;
   --danger:          #c0392b;
@@ -36,6 +37,7 @@
   --accent:          #e07840;
   --accent-hover:    #d06f39;
   --accent-muted:    #2c1f13;
+  --accent-ring:     rgba(224, 120, 64, 0.25);
   --success:         #22c55e;
   --success-muted:   #14532d;
   --danger:          #ef4444;
@@ -115,7 +117,7 @@ body {
     @apply w-full px-3.5 py-2.5 bg-[var(--surface)] border border-[var(--border)]
            rounded-[var(--radius-sm)] text-[var(--ink)]
            placeholder-[var(--ink-faint)] text-sm
-           focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30
+           focus:outline-none focus:ring-2 focus:ring-[var(--accent-ring)]
            focus:border-[var(--accent)] transition-all duration-150;
   }
 
