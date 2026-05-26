@@ -144,28 +144,39 @@ export async function getSparkline(req: Request, res: Response, next: NextFuncti
     const userId = req.user!.userId;
     const range = (req.query.range as string) || 'month';
 
-    // 7d   → daily   (7 Tage     = wöchentliche Ansicht,   7 Datenpunkte)
-    // month→ weekly  (30 Tage    = monatliche Ansicht,   ~4 Datenpunkte)
-    // year → monthly (365 Tage   = jährliche Ansicht,    12 Datenpunkte)
-    // all  → yearly  (gesamt     = gesamter Zeitraum,     N Datenpunkte)
-    const truncUnit: Record<string, string> = { '7d': 'day', 'month': 'week', 'year': 'month', 'all': 'year' };
-    const days:      Record<string, number> = { '7d': 7,     'month': 30,     'year': 365,     'all': 0 };
+    let rows: { period: string; income: string; expense: string }[];
 
-    const trunc = truncUnit[range] ?? 'day';
-    const d     = days[range]     ?? 30;
-
-    const rows = await query<{ period: string; income: string; expense: string }>(
-      `SELECT
-         date_trunc($1, date)::date::text AS period,
-         COALESCE(SUM(CASE WHEN type='income'  THEN amount ELSE 0 END), 0) AS income,
-         COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END), 0) AS expense
-       FROM transactions
-       WHERE user_id=$2
-         AND ($3::int = 0 OR date >= CURRENT_DATE - make_interval(days => $3::int))
-       GROUP BY 1
-       ORDER BY 1 ASC`,
-      [trunc, userId, d]
-    );
+    if (range === '7d') {
+      // generate_series guarantees all 7 days appear (fills gaps with 0),
+      // so the chart always draws a connected area instead of isolated dots.
+      rows = await query<{ period: string; income: string; expense: string }>(
+        `SELECT
+           gs::date::text AS period,
+           COALESCE(SUM(CASE WHEN t.type='income'  THEN t.amount ELSE 0 END), 0) AS income,
+           COALESCE(SUM(CASE WHEN t.type='expense' THEN t.amount ELSE 0 END), 0) AS expense
+         FROM generate_series(CURRENT_DATE - 6, CURRENT_DATE, '1 day'::interval) AS gs
+         LEFT JOIN transactions t ON t.date = gs::date AND t.user_id = $1
+         GROUP BY gs ORDER BY gs ASC`,
+        [userId]
+      );
+    } else {
+      // month → weekly (~4 pts), year → monthly (12 pts), all → yearly (N pts)
+      const truncUnit: Record<string, string> = { 'month': 'week', 'year': 'month', 'all': 'year' };
+      const days:      Record<string, number> = { 'month': 30,     'year': 365,     'all': 0 };
+      const trunc = truncUnit[range] ?? 'week';
+      const d     = days[range]     ?? 30;
+      rows = await query<{ period: string; income: string; expense: string }>(
+        `SELECT
+           date_trunc($1, date)::date::text AS period,
+           COALESCE(SUM(CASE WHEN type='income'  THEN amount ELSE 0 END), 0) AS income,
+           COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END), 0) AS expense
+         FROM transactions
+         WHERE user_id=$2
+           AND ($3::int = 0 OR date >= CURRENT_DATE - make_interval(days => $3::int))
+         GROUP BY 1 ORDER BY 1 ASC`,
+        [trunc, userId, d]
+      );
+    }
 
     res.json({
       data: rows.map(r => ({
