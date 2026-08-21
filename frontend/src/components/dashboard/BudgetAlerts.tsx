@@ -1,5 +1,6 @@
 import type { BudgetOverview } from '../../types';
 import { formatCurrency } from '../../utils/format';
+import { getPayday } from '../ui/BudgetModal';
 
 interface Props {
   overview: BudgetOverview;
@@ -15,23 +16,32 @@ interface Alert {
 export default function BudgetAlerts({ overview, isCurrentMonth }: Props) {
   if (!isCurrentMonth || overview.budgetBase <= 0) return null;
 
-  const { available, budgetBase, paid, byCategory, categoryBudgets } = overview;
+  const { available, budgetBase, paid, pending, byCategory, categoryBudgets } = overview;
+  const totalSpent = paid + pending;
 
   const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const dayOfMonth = now.getDate();
-  const daysLeft = daysInMonth - dayOfMonth;
-  const avgPerDay = dayOfMonth > 0 ? paid / dayOfMonth : 0;
+  const today = now.getDate();
+  const payday = getPayday();
+  const daysUntilPayday = today < payday ? payday - today : 0;
+  const afterPayday = today >= payday;
+
+  const avgPerDay = today > 0 ? totalSpent / today : 0;
   const daysAtThisRate = avgPerDay > 0 ? available / avgPerDay : 999;
-  const pctUsed = budgetBase > 0 ? (paid / budgetBase) * 100 : 0;
+  const pctUsed = budgetBase > 0 ? (totalSpent / budgetBase) * 100 : 0;
 
   const alerts: Alert[] = [];
 
   if (available < 0) {
     alerts.push({
       type: 'danger',
-      message: `Gesamtbudget überschritten!`,
+      message: 'Gesamtbudget überschritten!',
       detail: `Du hast ${formatCurrency(Math.abs(available))} mehr ausgegeben als verfügbar.`,
+    });
+  } else if (!afterPayday && avgPerDay > 0 && daysAtThisRate < daysUntilPayday) {
+    alerts.push({
+      type: 'danger',
+      message: `Geld reicht nicht bis zum Zahltag (${payday}.)!`,
+      detail: `Bei aktuellem Tempo (${formatCurrency(avgPerDay)}/Tag) ist das Geld in ~${Math.round(daysAtThisRate)} Tagen weg – noch ${daysUntilPayday} Tage bis zum Gehalt.`,
     });
   } else if (pctUsed >= 90) {
     alerts.push({
@@ -42,24 +52,20 @@ export default function BudgetAlerts({ overview, isCurrentMonth }: Props) {
   } else if (pctUsed >= 80) {
     alerts.push({
       type: 'warning',
-      message: `80% des Budgets verbraucht`,
-      detail: `Noch ${formatCurrency(available)} für ${daysLeft} verbleibende Tage.`,
-    });
-  } else if (avgPerDay > 0 && daysAtThisRate < daysLeft && daysAtThisRate < 10) {
-    alerts.push({
-      type: 'warning',
-      message: `Ausgabentempo zu hoch`,
-      detail: `Bei ${formatCurrency(avgPerDay)}/Tag ist das Budget in ~${Math.round(daysAtThisRate)} Tagen aufgebraucht – es bleiben noch ${daysLeft} Tage.`,
+      message: '80% des Budgets verbraucht',
+      detail: afterPayday
+        ? `Noch ${formatCurrency(available)} für den Rest des Monats.`
+        : `Noch ${formatCurrency(available)} bis zum Zahltag am ${payday}.`,
     });
   }
 
   // Kategorie-Warnungen
   categoryBudgets.forEach(budget => {
     if (!budget.category_id) return;
-    const catStat = byCategory.filter(b => b.category_id === budget.category_id);
-    const spent = catStat.reduce((s, c) => s + c.total, 0);
+    const spent = byCategory
+      .filter(b => b.category_id === budget.category_id)
+      .reduce((s, c) => s + Number(c.total), 0);
     const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
-
     if (pct >= 100) {
       alerts.push({
         type: 'danger',
@@ -75,10 +81,10 @@ export default function BudgetAlerts({ overview, isCurrentMonth }: Props) {
     }
   });
 
-  if (alerts.length === 0 && pctUsed < 50 && dayOfMonth > 15) {
+  if (alerts.length === 0 && afterPayday && pctUsed < 50) {
     alerts.push({
       type: 'success',
-      message: 'Super! Monatsmitte gut gemeistert',
+      message: 'Gut unterwegs! 👍',
       detail: `Du hast noch ${formatCurrency(available)} übrig – weiter so!`,
     });
   }

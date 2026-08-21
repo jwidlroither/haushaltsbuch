@@ -1,5 +1,6 @@
 import type { BudgetOverview } from '../../types';
 import { formatCurrency } from '../../utils/format';
+import { getPayday } from '../ui/BudgetModal';
 
 interface Props {
   overview: BudgetOverview;
@@ -10,21 +11,36 @@ export default function DailyBudgetWidget({ overview, isCurrentMonth }: Props) {
   if (!isCurrentMonth) return null;
 
   const { available, budgetBase } = overview;
-
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const dayOfMonth = now.getDate();
-  const daysLeft = daysInMonth - dayOfMonth;
-
   if (budgetBase <= 0) return null;
 
-  const dailyAllowed = daysLeft > 0 ? available / daysLeft : available;
-  const avgPerDay = dayOfMonth > 0 ? overview.paid / dayOfMonth : 0;
+  const now = new Date();
+  const today = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const payday = getPayday();
+
+  // Berechne wie viele Tage bis zum nächsten Gehalt
+  let daysUntilPayday: number;
+  let daysToCount: number;
+  let afterPayday: boolean;
+
+  if (today < payday) {
+    // Noch vor dem Zahltag diesen Monat – Geld muss bis Zahltag reichen
+    daysUntilPayday = payday - today;
+    daysToCount = daysUntilPayday;
+    afterPayday = false;
+  } else {
+    // Nach dem Zahltag – Geld reicht bis Ende des Monats
+    daysUntilPayday = daysInMonth - today + payday; // nächster Zahltag nächsten Monat
+    daysToCount = daysInMonth - today;
+    afterPayday = true;
+  }
+
+  const dailyAllowed = daysToCount > 0 ? available / daysToCount : available;
+  const avgPerDay = today > 0 ? (overview.paid + overview.pending) / today : 0;
   const daysAtThisRate = avgPerDay > 0 ? available / avgPerDay : 999;
-  const pctUsed = budgetBase > 0 ? (overview.paid / budgetBase) * 100 : 0;
 
   const isOver = available < 0;
-  const isWarning = !isOver && (pctUsed >= 80 || daysAtThisRate < daysLeft);
+  const isWarning = !isOver && (dailyAllowed < 5 || (!afterPayday && daysAtThisRate < daysUntilPayday));
   const isOk = !isOver && !isWarning;
 
   const colorClass = isOver
@@ -45,14 +61,21 @@ export default function DailyBudgetWidget({ overview, isCurrentMonth }: Props) {
     ? 'text-amber-700 dark:text-amber-300'
     : 'text-emerald-700 dark:text-emerald-300';
 
+  let label = '';
   let subText = '';
+
   if (isOver) {
-    subText = `Budget überschritten um ${formatCurrency(Math.abs(available))}`;
-  } else {
-    subText = `${daysLeft} Tage bis Monatsende · ${formatCurrency(Math.max(0, available))} gesamt verfügbar`;
-    if (avgPerDay > 0 && daysAtThisRate < daysLeft + 3) {
-      subText = `⚠ Bei aktuellem Tempo (${formatCurrency(avgPerDay)}/Tag) reicht das Geld noch ~${Math.round(daysAtThisRate)} Tage`;
+    label = 'Budget überschritten';
+    subText = `Du hast ${formatCurrency(Math.abs(available))} mehr ausgegeben als verfügbar.`;
+  } else if (!afterPayday) {
+    label = `Tagesbudget bis Zahltag (${payday}.)`;
+    subText = `Noch ${daysUntilPayday} Tage bis zum Gehalt · ${formatCurrency(available)} müssen reichen`;
+    if (avgPerDay > 0 && daysAtThisRate < daysUntilPayday) {
+      subText = `⚠ Bei aktuellem Tempo reicht das Geld nur noch ~${Math.round(daysAtThisRate)} Tage – aber noch ${daysUntilPayday} bis zum Zahltag!`;
     }
+  } else {
+    label = 'Tagesbudget – heute darfst du noch ausgeben';
+    subText = `${daysToCount} Tage bis Monatsende · ${formatCurrency(available)} gesamt verfügbar`;
   }
 
   return (
@@ -60,7 +83,7 @@ export default function DailyBudgetWidget({ overview, isCurrentMonth }: Props) {
       <div className="flex items-start justify-between">
         <div>
           <p className={`text-xs font-semibold uppercase tracking-widest ${labelClass}`}>
-            {isOk ? 'Tagesbudget – du darfst heute noch ausgeben' : isWarning ? 'Achtung – Tagesbudget' : 'Budget überschritten'}
+            {label}
           </p>
           <div className={`font-mono text-4xl font-bold tabular-nums mt-1 ${amountClass}`}>
             {isOver ? '-' : ''}{formatCurrency(Math.abs(dailyAllowed))}
@@ -68,7 +91,7 @@ export default function DailyBudgetWidget({ overview, isCurrentMonth }: Props) {
           <p className={`text-xs mt-2 ${labelClass} opacity-80`}>{subText}</p>
         </div>
         <div className={`text-3xl opacity-60`}>
-          {isOver ? '⚠' : isWarning ? '!' : '✓'}
+          {isOver ? '⚠' : isWarning ? '!' : afterPayday ? '✓' : '📅'}
         </div>
       </div>
     </div>

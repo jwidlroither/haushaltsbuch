@@ -13,12 +13,17 @@ interface BudgetModalProps {
   onSaved: () => void;
 }
 
+export function getPayday(): number {
+  return parseInt(localStorage.getItem('hb_payday') || '27');
+}
+
 export default function BudgetModal({ isOpen, onClose, month, year, categories, onSaved }: BudgetModalProps) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [totalAmount, setTotalAmount] = useState('');
   const [catAmounts, setCatAmounts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'total' | 'category'>('total');
+  const [payday, setPayday] = useState<string>(String(getPayday()));
 
   useEffect(() => {
     if (!isOpen) return;
@@ -33,11 +38,15 @@ export default function BudgetModal({ isOpen, onClose, month, year, categories, 
       });
       setCatAmounts(catMap);
     });
+    setPayday(String(getPayday()));
   }, [isOpen, month, year]);
 
   const handleSaveTotal = async () => {
     if (!totalAmount || parseFloat(totalAmount) <= 0) return;
     setSaving(true);
+    // Zahltag speichern
+    const pd = parseInt(payday);
+    if (pd >= 1 && pd <= 31) localStorage.setItem('hb_payday', String(pd));
     try {
       await budgetApi.upsert({ category_id: null, month, year, amount: parseFloat(totalAmount) });
       onSaved();
@@ -79,8 +88,7 @@ export default function BudgetModal({ isOpen, onClose, month, year, categories, 
       {activeTab === 'total' ? (
         <div className="space-y-4">
           <p className="text-sm text-[var(--ink-muted)]">
-            Lege ein monatliches Gesamtbudget für Ausgaben fest. Dieses wird als Basis für
-            die Budget-Anzeige verwendet.
+            Lege ein monatliches Gesamtbudget für Ausgaben fest.
           </p>
           <div>
             <label className="label">Gesamtbudget (€)</label>
@@ -92,6 +100,25 @@ export default function BudgetModal({ isOpen, onClose, month, year, categories, 
               placeholder="z.B. 2000"
             />
           </div>
+
+          {/* Zahltag */}
+          <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface-overlay)]">
+            <label className="label mb-1">📅 Zahltag (Tag des Monats)</label>
+            <p className="text-xs text-[var(--ink-faint)] mb-2">
+              Wann bekommst du dein Gehalt? Das Tagesbudget rechnet dann ab diesem Tag.
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                type="number" min="1" max="31"
+                value={payday}
+                onChange={e => setPayday(e.target.value)}
+                className="input w-24 font-mono text-lg text-center"
+                placeholder="27"
+              />
+              <span className="text-sm text-[var(--ink-muted)]">des Monats</span>
+            </div>
+          </div>
+
           {budgets.find(b => !b.category_id) && (
             <p className="text-xs text-[var(--ink-faint)]">
               Aktuell: {formatCurrency(budgets.find(b => !b.category_id)!.amount)}
