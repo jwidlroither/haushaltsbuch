@@ -18,6 +18,8 @@ import Modal from '../components/ui/Modal';
 import TransactionForm from '../components/transactions/TransactionForm';
 import BudgetModal from '../components/ui/BudgetModal';
 import SparklineWidget from '../components/dashboard/SparklineWidget';
+import DailyBudgetWidget from '../components/dashboard/DailyBudgetWidget';
+import BudgetAlerts from '../components/dashboard/BudgetAlerts';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 
 export default function DashboardPage() {
@@ -108,6 +110,14 @@ export default function DashboardPage() {
 
       {/* Budget Bar */}
       {overview && <BudgetBar overview={overview} onSetBudget={() => setShowBudget(true)} />}
+
+      {/* Daily Budget + Alerts */}
+      {overview && (
+        <>
+          <DailyBudgetWidget overview={overview} isCurrentMonth={isCurrentMonth} />
+          <BudgetAlerts overview={overview} isCurrentMonth={isCurrentMonth} />
+        </>
+      )}
 
       {/* KPI Cards */}
       {summary && <SummaryCards summary={summary} />}
