@@ -63,8 +63,8 @@ export default function TrendChart({ data }: TrendChartProps) {
       <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.15} />
-            <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+            <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
+            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#ef4444" stopOpacity={0.15} />
@@ -89,7 +89,7 @@ export default function TrendChart({ data }: TrendChartProps) {
           type="monotone"
           dataKey="income"
           name="income"
-          stroke="#22c55e"
+          stroke="#10b981"
           strokeWidth={2}
           fill="url(#incomeGrad)"
           dot={false}

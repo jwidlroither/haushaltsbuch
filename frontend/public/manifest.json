@@ -4,8 +4,8 @@
   "description": "Deine persönlichen Finanzen, klar und einfach.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8f7f5",
-  "theme_color": "#c9611f",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },

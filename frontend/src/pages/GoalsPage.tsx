@@ -4,6 +4,7 @@ import type { SavingsGoal, CreateGoalDto } from '../types';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useToast } from '../context/ToastContext';
 import Modal from '../components/ui/Modal';
+import RingProgress from '../components/ui/RingProgress';
 
 const ICONS = ['🎯','🏠','✈️','🚗','💻','📚','💍','🎓','🏋️','🎵','🌴','💰','🛒','🎁','🐾','🏖️','🍕','📷'];
 const COLORS = ['#6366f1','#22c55e','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f97316','#0ea5e9'];
@@ -290,11 +291,12 @@ function GoalCard({ goal, index, onDeposit, onEdit, onDelete }: {
     <div className="card-hover p-5 animate-on-mount" style={{ animationDelay:`${index*0.06}s` }}>
       {/* Top row */}
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-            style={{ background:`${goal.color}22` }}>{goal.icon}</div>
-          <div>
-            <div className="font-medium text-[var(--ink)]">{goal.name}</div>
+        <div className="flex items-center gap-3 min-w-0">
+          <RingProgress percent={pct} size={52} strokeWidth={5} color={goal.color}>
+            <span className="text-lg">{goal.icon}</span>
+          </RingProgress>
+          <div className="min-w-0">
+            <div className="font-medium text-[var(--ink)] truncate">{goal.name}</div>
             {goal.deadline && (
               <div className={`text-xs ${urgent?'text-amber-500':'text-[var(--ink-faint)]'}`}>
                 {urgent && '⚠️ '}Bis {formatDate(goal.deadline)}
@@ -311,19 +313,13 @@ function GoalCard({ goal, index, onDeposit, onEdit, onDelete }: {
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="mb-3">
-        <div className="h-2.5 rounded-full bg-[var(--surface-overlay)] overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-700"
-            style={{ width:`${pct}%`, background: goal.color }} />
-        </div>
-        <div className="flex items-center justify-between mt-1.5 text-xs">
-          <span className="font-mono font-semibold" style={{ color: goal.color }}>
-            {formatCurrency(Number(goal.current_amount))}
-          </span>
-          <span className="text-[var(--ink-faint)]">{pct}%</span>
-          <span className="font-mono text-[var(--ink-muted)]">{formatCurrency(Number(goal.target_amount))}</span>
-        </div>
+      {/* Amounts */}
+      <div className="flex items-center justify-between mb-3 text-xs">
+        <span className="font-mono font-semibold text-base" style={{ color: goal.color }}>
+          {formatCurrency(Number(goal.current_amount))}
+        </span>
+        <span className="text-[var(--ink-faint)]">{pct}%</span>
+        <span className="font-mono text-[var(--ink-muted)]">{formatCurrency(Number(goal.target_amount))}</span>
       </div>
 
       {/* Bottom */}

@@ -10,6 +10,9 @@ interface AuthContextType {
   login: () => void;
   logout: () => Promise<void>;
   setToken: (token: string) => void;
+  /** Zahltag (1-31) des Nutzers – zentrale Quelle statt localStorage 'hb_payday'. */
+  payday: number | null;
+  setPayday: (payday: number | null) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -79,8 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUser();
   }, [fetchUser]);
 
+  const setPayday = useCallback(async (payday: number | null) => {
+    const res = await authApi.updateMe({ payday });
+    setUser(res.data.user);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, login, logout, setToken }}>
+    <AuthContext.Provider value={{
+      user, isLoading, isAuthenticated: !!user, login, logout, setToken,
+      payday: user?.payday ?? null, setPayday,
+    }}>
       {children}
     </AuthContext.Provider>
   );

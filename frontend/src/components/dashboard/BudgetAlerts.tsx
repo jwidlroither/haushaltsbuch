@@ -1,6 +1,6 @@
 import type { BudgetOverview } from '../../types';
 import { formatCurrency } from '../../utils/format';
-import { getPayday } from '../ui/BudgetModal';
+import { useAuth } from '../../context/AuthContext';
 
 interface Props {
   overview: BudgetOverview;
@@ -13,7 +13,10 @@ interface Alert {
   detail?: string;
 }
 
+const DEFAULT_PAYDAY = 27;
+
 export default function BudgetAlerts({ overview, isCurrentMonth }: Props) {
+  const { payday: storedPayday } = useAuth();
   if (!isCurrentMonth || overview.budgetBase <= 0) return null;
 
   const { available, budgetBase, paid, pending, byCategory, categoryBudgets } = overview;
@@ -21,7 +24,7 @@ export default function BudgetAlerts({ overview, isCurrentMonth }: Props) {
 
   const now = new Date();
   const today = now.getDate();
-  const payday = getPayday();
+  const payday = storedPayday ?? DEFAULT_PAYDAY;
   const daysUntilPayday = today < payday ? payday - today : 0;
   const afterPayday = today >= payday;
 

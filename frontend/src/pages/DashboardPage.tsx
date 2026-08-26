@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { useMonthNav } from '../hooks/useMonthNav';
 import SummaryCards from '../components/dashboard/SummaryCards';
 import BudgetBar from '../components/dashboard/BudgetBar';
+import CategoryBudgetTiles from '../components/dashboard/CategoryBudgetTiles';
 import PendingList from '../components/dashboard/PendingList';
 import UpcomingWidget from '../components/dashboard/UpcomingWidget';
 import GoalsWidget from '../components/dashboard/GoalsWidget';
@@ -63,6 +64,12 @@ export default function DashboardPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Reagiert auf Transaktionen, die z.B. über die Schnelleingabe (FAB) angelegt wurden
+  useEffect(() => {
+    window.addEventListener('hb:tx-changed', load);
+    return () => window.removeEventListener('hb:tx-changed', load);
+  }, [load]);
+
   const handleDelete = async (id: string) => {
     if (!confirm('Transaktion wirklich löschen?')) return;
     try { await transactionsApi.delete(id); toast.success('Gelöscht.'); load(); }
@@ -108,7 +115,7 @@ export default function DashboardPage() {
           disableNext={isCurrentMonth} direction={direction} loading={loading} />
       </div>
 
-      {/* Budget Bar */}
+      {/* Hero: Budget Bar mit Fortschrittsring */}
       {overview && <BudgetBar overview={overview} onSetBudget={() => setShowBudget(true)} />}
 
       {/* Daily Budget + Alerts */}
@@ -118,6 +125,9 @@ export default function DashboardPage() {
           <BudgetAlerts overview={overview} isCurrentMonth={isCurrentMonth} />
         </>
       )}
+
+      {/* Kompakte Kategorie-Budget-Kacheln */}
+      {overview && <CategoryBudgetTiles overview={overview} isCurrentMonth={isCurrentMonth} />}
 
       {/* KPI Cards */}
       {summary && <SummaryCards summary={summary} />}

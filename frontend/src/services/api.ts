@@ -1,7 +1,8 @@
 import axios, { type AxiosError } from 'axios';
 import type {
   Transaction, Category, Summary, Budget, BudgetOverview,
-  TransactionFilters, CreateTransactionDto, CreateCategoryDto, ApiResponse
+  TransactionFilters, CreateTransactionDto, CreateCategoryDto, ApiResponse,
+  User, ApiToken, CreatedApiToken
 } from '../types';
 
 const api = axios.create({
@@ -36,8 +37,17 @@ api.interceptors.response.use(
 // ── Auth ──────────────────────────────────────────────────────
 export const authApi = {
   getLoginUrl: () => `${import.meta.env.VITE_API_URL || '/api'}/auth/login`,
-  getMe:    () => api.get('/auth/me'),
+  getMe:    () => api.get<{ user: User }>('/auth/me'),
   logout:   () => api.post<{ logoutUrl: string }>('/auth/logout'),
+  // Zahltag wird jetzt serverseitig gespeichert (statt localStorage 'hb_payday')
+  updateMe: (data: { payday: number | null }) => api.patch<{ user: User }>('/auth/me', data),
+};
+
+// ── API-Tokens (Einstellungen) ────────────────────────────────
+export const tokensApi = {
+  list:   () => api.get<ApiResponse<ApiToken[]>>('/auth/tokens'),
+  create: (name?: string) => api.post<ApiResponse<CreatedApiToken>>('/auth/tokens', { name }),
+  delete: (id: string) => api.delete(`/auth/tokens/${id}`),
 };
 
 // ── Transactions ─────────────────────────────────────────────
@@ -52,6 +62,9 @@ export const transactionsApi = {
   markPaid:  (id: string) => api.patch<ApiResponse<Transaction>>(`/transactions/${id}/pay`),
   getSummary:(params: { month?: number; year?: number }) =>
     api.get<Summary>('/transactions/summary', { params }),
+  // Danger Zone: löscht alle Transaktionen eines Monats unwiderruflich
+  deleteMonth: (month: number, year: number) =>
+    api.delete<{ deleted: number }>('/transactions/by-month', { params: { month, year } }),
 };
 
 // ── Categories ───────────────────────────────────────────────

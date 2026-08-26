@@ -1,5 +1,6 @@
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isToday, isYesterday, isThisWeek } from 'date-fns';
 import { de } from 'date-fns/locale';
+import type { Transaction } from '../types';
 
 export function formatCurrency(amount: number, showSign = false): string {
   const formatted = new Intl.NumberFormat('de-AT', {
@@ -42,4 +43,24 @@ export function today(): string {
 export function currentMonth() {
   const now = new Date();
   return { month: now.getMonth() + 1, year: now.getFullYear() };
+}
+
+export interface TransactionGroup { label: string; items: Transaction[]; }
+
+/** Gruppiert Transaktionen (bereits absteigend nach Datum sortiert) in relative Zeit-Buckets. */
+export function groupTransactionsByDate(transactions: Transaction[]): TransactionGroup[] {
+  const order = ['Heute', 'Gestern', 'Diese Woche', 'Älter'];
+  const buckets: Record<string, Transaction[]> = { Heute: [], Gestern: [], 'Diese Woche': [], Älter: [] };
+
+  for (const t of transactions) {
+    const d = parseISO(t.date);
+    if (isToday(d)) buckets['Heute'].push(t);
+    else if (isYesterday(d)) buckets['Gestern'].push(t);
+    else if (isThisWeek(d, { weekStartsOn: 1 })) buckets['Diese Woche'].push(t);
+    else buckets['Älter'].push(t);
+  }
+
+  return order
+    .map(label => ({ label, items: buckets[label] }))
+    .filter(g => g.items.length > 0);
 }
