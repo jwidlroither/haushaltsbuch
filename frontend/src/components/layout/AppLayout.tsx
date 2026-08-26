@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import QuickAddFAB from '../ui/QuickAddFAB';
 
 const NAV = [
   { to:'/',             icon:'▦',  label:'Dashboard',    end:true  },
@@ -9,6 +10,7 @@ const NAV = [
   { to:'/recurring',    icon:'⟳',  label:'Wiederkehrend'           },
   { to:'/goals',        icon:'◎',  label:'Sparziele'               },
   { to:'/categories',   icon:'⊞',  label:'Kategorien'              },
+  { to:'/einstellungen',icon:'⚙',  label:'Einstellungen'           },
 ];
 
 export default function AppLayout() {
@@ -88,7 +90,7 @@ export default function AppLayout() {
           {/* User */}
           <div className="flex items-center gap-3 px-3 py-2.5 mt-1 rounded-[var(--radius-sm)]
             bg-[var(--surface-overlay)]">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent)] to-orange-400
+            <div className="w-7 h-7 rounded-full bg-[var(--accent)]
               flex items-center justify-center text-white text-xs font-bold shrink-0">
               {initials}
             </div>
@@ -119,6 +121,9 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Schnelleingabe – auf allen authentifizierten Seiten verfügbar */}
+      <QuickAddFAB />
     </div>
   );
 }

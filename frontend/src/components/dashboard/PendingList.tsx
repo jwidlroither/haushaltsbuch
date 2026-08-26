@@ -7,47 +7,45 @@ interface PendingListProps {
   onEdit: (t: Transaction) => void;
 }
 
+/**
+ * Ausstehende Ausgaben als prominente "Action Items" – jede Karte lädt
+ * direkt zum Abhaken ein statt in einer schlichten Liste zu verschwinden.
+ */
 export default function PendingList({ transactions, onMarkPaid, onEdit }: PendingListProps) {
   if (transactions.length === 0) return null;
 
   const total = transactions.reduce((s, t) => s + Number(t.amount), 0);
 
   return (
-    <div className="card animate-on-mount stagger-3">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
-        <div className="flex items-center gap-2.5">
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-          <h3 className="font-display text-[var(--ink)]">Ausstehende Ausgaben</h3>
-          <span className="badge bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+    <div className="animate-on-mount stagger-3">
+      <div className="flex items-center justify-between mb-2.5 px-0.5">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[var(--warning)] animate-pulse" />
+          <h3 className="font-display text-sm text-[var(--ink-muted)]">Ausstehende Ausgaben</h3>
+          <span className="badge text-[var(--warning)]" style={{ background: 'color-mix(in srgb, var(--warning) 15%, transparent)' }}>
             {transactions.length}
           </span>
         </div>
-        <span className="font-mono text-sm font-semibold text-amber-600 dark:text-amber-400">
+        <span className="font-mono text-sm font-semibold text-[var(--warning)]">
           −{formatCurrency(total)}
         </span>
       </div>
 
-      <div className="divide-y divide-[var(--border)]">
+      <div className="space-y-2">
         {transactions.map((t, i) => (
           <div
             key={t.id}
-            className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--surface-overlay)]
-              transition-colors group animate-on-mount"
-            style={{ animationDelay: `${i * 0.04}s` }}
+            className="flex items-center gap-3 p-4 rounded-[var(--radius)] border-2
+              hover:border-[var(--warning)] transition-all duration-150 animate-on-mount"
+            style={{
+              animationDelay: `${i * 0.04}s`,
+              borderColor: 'color-mix(in srgb, var(--warning) 35%, transparent)',
+              background: 'color-mix(in srgb, var(--warning) 6%, var(--surface))',
+            }}
           >
-            {/* Mark-paid checkbox */}
-            <button
-              onClick={() => onMarkPaid(t.id)}
-              title="Als bezahlt markieren"
-              className="w-5 h-5 rounded-full border-2 border-amber-400 flex items-center justify-center
-                shrink-0 hover:bg-amber-400 hover:border-amber-400 transition-all duration-150 group/btn"
-            >
-              <span className="w-2 h-2 rounded-full bg-transparent group-hover/btn:bg-white transition-all" />
-            </button>
-
             {/* Icon */}
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0"
               style={{ background: t.category_color ? `${t.category_color}22` : 'var(--surface-overlay)' }}
             >
               {t.category_icon || '📦'}
@@ -65,18 +63,21 @@ export default function PendingList({ transactions, onMarkPaid, onEdit }: Pendin
             </div>
 
             {/* Amount */}
-            <span className="font-mono text-sm font-semibold text-amber-600 dark:text-amber-400 tabular-nums shrink-0">
+            <span className="font-mono text-sm font-semibold text-[var(--warning)] tabular-nums shrink-0">
               −{formatCurrency(Number(t.amount))}
             </span>
+
+            {/* Quick action */}
+            <button
+              onClick={() => onMarkPaid(t.id)}
+              className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold
+                bg-[var(--warning)] text-white hover:brightness-110 active:scale-95
+                transition-all duration-150 whitespace-nowrap"
+            >
+              ✓ Bezahlt
+            </button>
           </div>
         ))}
-      </div>
-
-      {/* Footer hint */}
-      <div className="px-5 py-3 border-t border-[var(--border)] bg-amber-50/50 dark:bg-amber-900/10">
-        <p className="text-xs text-amber-600 dark:text-amber-400">
-          💡 Klicke den Kreis links um eine Ausgabe als bezahlt zu markieren
-        </p>
       </div>
     </div>
   );

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { budgetApi } from '../../services/api';
 import type { Budget, Category } from '../../types';
 import { formatCurrency } from '../../utils/format';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import Modal from './Modal';
 
 interface BudgetModalProps {
@@ -13,17 +15,17 @@ interface BudgetModalProps {
   onSaved: () => void;
 }
 
-export function getPayday(): number {
-  return parseInt(localStorage.getItem('hb_payday') || '27');
-}
+const DEFAULT_PAYDAY = 27;
 
 export default function BudgetModal({ isOpen, onClose, month, year, categories, onSaved }: BudgetModalProps) {
+  const { payday: storedPayday, setPayday: persistPayday } = useAuth();
+  const { toast } = useToast();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [totalAmount, setTotalAmount] = useState('');
   const [catAmounts, setCatAmounts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'total' | 'category'>('total');
-  const [payday, setPayday] = useState<string>(String(getPayday()));
+  const [payday, setPayday] = useState<string>(String(storedPayday ?? DEFAULT_PAYDAY));
 
   useEffect(() => {
     if (!isOpen) return;
@@ -38,19 +40,23 @@ export default function BudgetModal({ isOpen, onClose, month, year, categories, 
       });
       setCatAmounts(catMap);
     });
-    setPayday(String(getPayday()));
-  }, [isOpen, month, year]);
+    setPayday(String(storedPayday ?? DEFAULT_PAYDAY));
+  }, [isOpen, month, year, storedPayday]);
 
   const handleSaveTotal = async () => {
     if (!totalAmount || parseFloat(totalAmount) <= 0) return;
     setSaving(true);
-    // Zahltag speichern
-    const pd = parseInt(payday);
-    if (pd >= 1 && pd <= 31) localStorage.setItem('hb_payday', String(pd));
     try {
+      // Zahltag serverseitig speichern (statt localStorage 'hb_payday')
+      const pd = parseInt(payday);
+      if (pd >= 1 && pd <= 31 && pd !== storedPayday) {
+        await persistPayday(pd);
+      }
       await budgetApi.upsert({ category_id: null, month, year, amount: parseFloat(totalAmount) });
       onSaved();
       onClose();
+    } catch {
+      toast.error('Speichern fehlgeschlagen.');
     } finally { setSaving(false); }
   };
 
@@ -101,21 +107,21 @@ export default function BudgetModal({ isOpen, onClose, month, year, categories, 
             />
           </div>
 
-          {/* Zahltag */}
-          <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface-overlay)]">
-            <label className="label mb-1">📅 Zahltag (Tag des Monats)</label>
-            <p className="text-xs text-[var(--ink-faint)] mb-2">
-              Wann bekommst du dein Gehalt? Das Tagesbudget rechnet dann ab diesem Tag.
+          {/* Zahltag – prominent, da zentral für die Tagesbudget-Logik */}
+          <div className="p-4 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-muted)]">
+            <label className="label mb-1 !text-[var(--accent)]">📅 Zahltag</label>
+            <p className="text-xs text-[var(--ink-muted)] mb-3">
+              Wann bekommst du dein Gehalt? Das Tagesbudget rechnet ab diesem Tag des Monats.
             </p>
             <div className="flex items-center gap-3">
               <input
                 type="number" min="1" max="31"
                 value={payday}
                 onChange={e => setPayday(e.target.value)}
-                className="input w-24 font-mono text-lg text-center"
+                className="input w-24 font-mono text-2xl font-bold text-center border-[var(--accent)]"
                 placeholder="27"
               />
-              <span className="text-sm text-[var(--ink-muted)]">des Monats</span>
+              <span className="text-sm text-[var(--ink-muted)]">Tag des Monats</span>
             </div>
           </div>
 

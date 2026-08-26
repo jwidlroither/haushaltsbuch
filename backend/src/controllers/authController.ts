@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { z } from 'zod';
 import { getOidcClient, generators } from '../config/oidc';
 import { config } from '../config';
 import { query } from '../config/database';
@@ -144,6 +145,28 @@ export async function logout(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export function getMe(req: Request, res: Response): void {
-  res.json({ user: req.user });
+export async function getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const rows = await query<{ payday: number | null }>(
+      'SELECT payday FROM users WHERE id = $1',
+      [req.user!.userId]
+    );
+    res.json({ user: { ...req.user, payday: rows[0]?.payday ?? null } });
+  } catch (err) { next(err); }
+}
+
+const UpdateMeSchema = z.object({
+  payday: z.number().int().min(1).max(31).nullable(),
+});
+
+/** Zahltag serverseitig speichern (ersetzt `hb_payday` in localStorage). */
+export async function updateMe(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { payday } = UpdateMeSchema.parse(req.body);
+    const rows = await query<{ payday: number | null }>(
+      'UPDATE users SET payday = $2 WHERE id = $1 RETURNING payday',
+      [req.user!.userId, payday]
+    );
+    res.json({ user: { ...req.user, payday: rows[0]?.payday ?? null } });
+  } catch (err) { next(err); }
 }

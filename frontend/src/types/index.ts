@@ -2,6 +2,21 @@ export interface User {
   userId: string;
   email: string;
   name: string;
+  payday: number | null;
+}
+
+/** API-Token (Liste) – der Klartext-Token wird nie zurückgegeben. */
+export interface ApiToken {
+  id: string;
+  name: string | null;
+  last_used: string | null;
+  created_at: string;
+}
+
+/** Antwort direkt nach dem Erstellen – enthält den Klartext-Token einmalig. */
+export interface CreatedApiToken extends ApiToken {
+  user_id: string;
+  token: string;
 }
 
 export interface Category {

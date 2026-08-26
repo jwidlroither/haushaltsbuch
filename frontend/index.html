@@ -6,7 +6,7 @@
     <meta name="description" content="Haushaltsbuch – Deine Finanzen im Überblick" />
 
     <!-- PWA -->
-    <meta name="theme-color" content="#c9611f" />
+    <meta name="theme-color" content="#0f1117" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Haushaltsbuch" />
@@ -20,6 +20,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script>
+      // Dunkel-first: Theme-Klasse vor dem ersten Paint setzen (verhindert Flackern).
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          if (stored !== 'light') document.documentElement.classList.add('dark');
+        } catch (e) { document.documentElement.classList.add('dark'); }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

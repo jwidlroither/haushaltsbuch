@@ -1,13 +1,16 @@
 import type { BudgetOverview } from '../../types';
 import { formatCurrency } from '../../utils/format';
-import { getPayday } from '../ui/BudgetModal';
+import { useAuth } from '../../context/AuthContext';
 
 interface Props {
   overview: BudgetOverview;
   isCurrentMonth: boolean;
 }
 
+const DEFAULT_PAYDAY = 27;
+
 export default function DailyBudgetWidget({ overview, isCurrentMonth }: Props) {
+  const { payday: storedPayday } = useAuth();
   if (!isCurrentMonth) return null;
 
   const { available, budgetBase } = overview;
@@ -16,7 +19,7 @@ export default function DailyBudgetWidget({ overview, isCurrentMonth }: Props) {
   const now = new Date();
   const today = now.getDate();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const payday = getPayday();
+  const payday = storedPayday ?? DEFAULT_PAYDAY;
 
   // Berechne wie viele Tage bis zum nächsten Gehalt
   let daysUntilPayday: number;

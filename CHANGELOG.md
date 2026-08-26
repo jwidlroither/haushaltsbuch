@@ -5,7 +5,30 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
-## [1.5.0] – 2026-05 (aktuell)
+## [1.6.0] – 2026-08 (aktuell)
+
+### Neu
+- **iOS App (SwiftUI, iOS 17+)** – natives Dashboard, Schnelleingabe, Transaktionsliste
+  (Swipe-to-Delete/Pay) und Einstellungen unter `ios/`, siehe `ios/README.md`
+- **Home-Screen-Widget** (Small/Medium/Large, WidgetKit) mit 15-Min-Refresh, geteiltem
+  App-Group-Cache und Deep-Link `haushaltsbuch://new`
+- **Persönliche API-Tokens** – `GET/POST/DELETE /api/auth/tokens`, erlauben Bearer-Auth
+  ohne OIDC-Browser-Flow (für iOS-App und andere Clients)
+- **`/einstellungen`-Seite** – API-Token-Verwaltung, Zahltag, Profil (read-only),
+  Link zu Kategorien, CSV/PDF-Export, Danger Zone (Monat löschen)
+- **`DELETE /api/transactions/by-month`** – Bulk-Löschen aller Transaktionen eines Monats
+- Dark-first Redesign: neue Indigo/Grün/Rot-Palette, Dashboard-Hero mit Ring-Fortschritt,
+  Kategorie-Budget-Kacheln, gruppierte Transaktionsliste (Heute/Gestern/…), Quick-Filter-Chips,
+  Floating-Action-Button mit Bottom-Sheet-Schnelleingabe
+
+### Verbessert
+- Zahltag wird jetzt serverseitig gespeichert (`users.payday`) statt in `localStorage`
+  (`hb_payday`) – gemeinsame Quelle für Web und iOS
+- `PendingList` als prominente Action-Item-Karten statt einfacher Liste
+
+---
+
+## [1.5.0] – 2026-05
 
 ### Neu
 - **Sparziele** – Ziele anlegen mit Fortschrittsbalken, Zieldatum, Farbe & Icon

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { initiateLogin, handleCallback, logout, getMe } from '../controllers/authController';
-import { getTransactions, createTransaction, updateTransaction, deleteTransaction, getSummary, markAsPaid, getSparkline } from '../controllers/transactionsController';
+import { initiateLogin, handleCallback, logout, getMe, updateMe } from '../controllers/authController';
+import { getTransactions, createTransaction, updateTransaction, deleteTransaction, deleteMonth, getSummary, markAsPaid, getSparkline } from '../controllers/transactionsController';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../controllers/categoriesController';
 import { getBudgets, upsertBudget, deleteBudget, getBudgetOverview } from '../controllers/budgetController';
 import { getRecurring, createRecurring, updateRecurring, deleteRecurring, toggleRecurring, triggerMaterialize, getUpcomingPreview } from '../controllers/recurringController';
@@ -8,12 +8,18 @@ import { authenticate } from '../middleware/auth';
 import { swaggerSpec } from '../config/swagger';
 import { getGoals, createGoal, updateGoal, deleteGoal, depositToGoal } from '../controllers/goalsController';
 import { exportCsv, exportPdf } from '../controllers/exportController';
+import { getTokens, createToken, deleteToken } from '../controllers/tokensController';
 
 const router = Router();
 router.get('/auth/login',    initiateLogin);
 router.get('/auth/callback', handleCallback);
 router.post('/auth/logout',  authenticate, logout);
 router.get('/auth/me',       authenticate, getMe);
+router.patch('/auth/me',     authenticate, updateMe);
+
+router.get('/auth/tokens',        authenticate, getTokens);
+router.post('/auth/tokens',       authenticate, createToken);
+router.delete('/auth/tokens/:id', authenticate, deleteToken);
 
 router.get('/transactions/sparkline',  authenticate, getSparkline);
 router.get('/transactions/summary',    authenticate, getSummary);
@@ -21,6 +27,7 @@ router.get('/transactions',            authenticate, getTransactions);
 router.post('/transactions',           authenticate, createTransaction);
 router.patch('/transactions/:id/pay',  authenticate, markAsPaid);
 router.put('/transactions/:id',        authenticate, updateTransaction);
+router.delete('/transactions/by-month',authenticate, deleteMonth);
 router.delete('/transactions/:id',     authenticate, deleteTransaction);
 
 router.get('/categories',        authenticate, getCategories);

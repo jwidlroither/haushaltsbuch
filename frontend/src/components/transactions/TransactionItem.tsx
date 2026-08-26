@@ -1,5 +1,6 @@
 import type { Transaction } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/format';
+import SwipeableRow from '../ui/SwipeableRow';
 
 interface Props {
   transaction: Transaction;
@@ -13,6 +14,7 @@ export default function TransactionItem({ transaction: t, onEdit, onDelete, onMa
   const isPending = t.type === 'expense' && t.status === 'ausstehend';
 
   return (
+    <SwipeableRow onDelete={() => onDelete(t.id)} onMarkPaid={isPending && onMarkPaid ? () => onMarkPaid(t.id) : undefined}>
     <div
       className={`group flex items-center gap-3 p-3.5 hover:bg-[var(--surface-overlay)]
         rounded-[var(--radius-sm)] transition-all duration-150 animate-on-mount
@@ -73,5 +75,6 @@ export default function TransactionItem({ transaction: t, onEdit, onDelete, onMa
             hover:text-[var(--danger)] hover:bg-red-50 dark:hover:bg-red-900/20 transition-all text-sm">×</button>
       </div>
     </div>
+    </SwipeableRow>
   );
 }

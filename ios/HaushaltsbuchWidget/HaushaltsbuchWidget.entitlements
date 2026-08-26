@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.at.tumpenhasi.haushaltsbuch</string>
+	</array>
+
+	<!-- Identisch zur App: derselbe einzelne Eintrag macht diese Gruppe zur Standard-
+	     Keychain-Access-Group, damit das Widget den vom Haupt-App-Target gespeicherten
+	     API-Token lesen kann (siehe Shared/KeychainStore.swift). -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)group.at.tumpenhasi.haushaltsbuch</string>
+	</array>
+</dict>
+</plist>

@@ -1,0 +1,9 @@
+# Von `xcodegen generate` aus project.yml erzeugt – bewusst nicht eingecheckt,
+# siehe README.md ("Warum kein eingechecktes Haushaltsbuch.xcodeproj?").
+Haushaltsbuch.xcodeproj/
+
+# Xcode-Benutzerstatus / lokale Build-Artefakte
+xcuserdata/
+DerivedData/
+*.xcuserstate
+.DS_Store

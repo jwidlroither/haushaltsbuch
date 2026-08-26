@@ -3,6 +3,7 @@ import { transactionsApi, categoriesApi, downloadExport } from '../services/api'
 import type { Transaction, Category, TransactionFilters } from '../types';
 import { useToast } from '../context/ToastContext';
 import { useMonthNav } from '../hooks/useMonthNav';
+import { groupTransactionsByDate } from '../utils/format';
 import TransactionItem from '../components/transactions/TransactionItem';
 import MonthSelector from '../components/ui/MonthSelector';
 import Modal from '../components/ui/Modal';
@@ -10,6 +11,18 @@ import TransactionForm from '../components/transactions/TransactionForm';
 import { TransactionSkeleton } from '../components/ui/Skeleton';
 
 const LIMIT = 20;
+
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick}
+      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all whitespace-nowrap
+        ${active
+          ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+          : 'bg-[var(--surface)] border-[var(--border)] text-[var(--ink-muted)] hover:border-[var(--accent)] hover:text-[var(--ink)]'}`}>
+      {children}
+    </button>
+  );
+}
 
 export default function TransactionsPage() {
   const { toast } = useToast();
@@ -49,6 +62,12 @@ export default function TransactionsPage() {
   useEffect(() => { categoriesApi.list().then(r => setCategories(r.data.data)); }, []);
   useEffect(() => { load(); }, [load]);
 
+  // Reagiert auf Transaktionen, die z.B. über die Schnelleingabe (FAB) angelegt wurden
+  useEffect(() => {
+    window.addEventListener('hb:tx-changed', load);
+    return () => window.removeEventListener('hb:tx-changed', load);
+  }, [load]);
+
   // Reset offset when filters or month change
   useEffect(() => { setOffset(0); }, [month, year, typeFilter, statusFilter, catFilter]);
 
@@ -64,6 +83,7 @@ export default function TransactionsPage() {
   };
 
   const pendingCount = transactions.filter(t => t.status === 'ausstehend').length;
+  const groups = groupTransactionsByDate(transactions);
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-5">
@@ -76,7 +96,7 @@ export default function TransactionsPage() {
         </button>
       </div>
 
-      {/* Filters */}
+      {/* Month + Quick-Filter Chips */}
       <div className="card p-4 space-y-3 animate-on-mount stagger-1">
         <MonthSelector
           month={month} year={year}
@@ -86,27 +106,24 @@ export default function TransactionsPage() {
           direction={direction}
           loading={loading}
         />
-        <div className="grid grid-cols-3 gap-2">
-          <select value={typeFilter}
-            onChange={e => setTypeFilter(e.target.value)}
-            className="input text-sm" aria-label="Typ filtern">
-            <option value="">Alle Typen</option>
-            <option value="expense">↑ Ausgaben</option>
-            <option value="income">↓ Einnahmen</option>
-          </select>
-          <select value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="input text-sm" aria-label="Status filtern">
-            <option value="">Alle Status</option>
-            <option value="bezahlt">✓ Bezahlt</option>
-            <option value="ausstehend">⏳ Ausstehend</option>
-          </select>
-          <select value={catFilter}
-            onChange={e => setCatFilter(e.target.value)}
-            className="input text-sm" aria-label="Kategorie filtern">
-            <option value="">Alle Kategorien</option>
-            {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-          </select>
+
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1">
+          <Chip active={typeFilter === ''} onClick={() => setTypeFilter('')}>Alle Typen</Chip>
+          <Chip active={typeFilter === 'expense'} onClick={() => setTypeFilter('expense')}>↑ Ausgaben</Chip>
+          <Chip active={typeFilter === 'income'} onClick={() => setTypeFilter('income')}>↓ Einnahmen</Chip>
+        </div>
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1">
+          <Chip active={statusFilter === ''} onClick={() => setStatusFilter('')}>Alle Status</Chip>
+          <Chip active={statusFilter === 'bezahlt'} onClick={() => setStatusFilter('bezahlt')}>✓ Bezahlt</Chip>
+          <Chip active={statusFilter === 'ausstehend'} onClick={() => setStatusFilter('ausstehend')}>⏳ Ausstehend</Chip>
+        </div>
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1">
+          <Chip active={catFilter === ''} onClick={() => setCatFilter('')}>Alle Kategorien</Chip>
+          {categories.map(c => (
+            <Chip key={c.id} active={catFilter === c.id} onClick={() => setCatFilter(c.id)}>
+              {c.icon} {c.name}
+            </Chip>
+          ))}
         </div>
       </div>
 
@@ -120,54 +137,62 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {/* List */}
-      <div className="card animate-on-mount stagger-2">
-        {loading ? (
+      {/* Grouped list */}
+      {loading ? (
+        <div className="card animate-on-mount stagger-2">
           <div className="px-2 py-2 space-y-1">
             {[0,1,2,3,4,5].map(i => <TransactionSkeleton key={i} />)}
           </div>
-        ) : transactions.length === 0 ? (
-          <div className="text-center py-16 text-[var(--ink-faint)] text-sm">
-            <div className="text-3xl mb-3">📭</div>
-            Keine Transaktionen gefunden.{' '}
-            <button onClick={() => setShowForm(true)}
-              className="text-[var(--accent)] hover:underline">
-              Erste hinzufügen
-            </button>
-          </div>
-        ) : (
-          <div className="px-2 py-2">
-            {transactions.map((t, i) => (
-              <TransactionItem key={t.id} transaction={t} index={i}
-                onEdit={tx => { setEditing(tx); setShowForm(true); }}
-                onDelete={handleDelete}
-                onMarkPaid={handleMarkPaid}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {total > LIMIT && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-[var(--border)]">
-            <span className="text-xs text-[var(--ink-faint)]">
-              {offset+1}–{Math.min(offset+LIMIT, total)} von {total}
-            </span>
-            <div className="flex gap-2">
-              <button disabled={offset===0}
-                onClick={() => setOffset(Math.max(0, offset-LIMIT))}
-                className="btn-secondary px-3 py-1.5 text-xs disabled:opacity-40">
-                ← Zurück
-              </button>
-              <button disabled={offset+LIMIT>=total}
-                onClick={() => setOffset(offset+LIMIT)}
-                className="btn-secondary px-3 py-1.5 text-xs disabled:opacity-40">
-                Weiter →
-              </button>
+        </div>
+      ) : transactions.length === 0 ? (
+        <div className="card text-center py-16 text-[var(--ink-faint)] text-sm animate-on-mount stagger-2">
+          <div className="text-3xl mb-3">📭</div>
+          Keine Transaktionen gefunden.{' '}
+          <button onClick={() => setShowForm(true)}
+            className="text-[var(--accent)] hover:underline">
+            Erste hinzufügen
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4 animate-on-mount stagger-2">
+          {groups.map(group => (
+            <div key={group.label}>
+              <h3 className="text-xs font-semibold text-[var(--ink-faint)] uppercase tracking-wider mb-1.5 px-1">
+                {group.label}
+              </h3>
+              <div className="card px-2 py-2">
+                {group.items.map((t, i) => (
+                  <TransactionItem key={t.id} transaction={t} index={i}
+                    onEdit={tx => { setEditing(tx); setShowForm(true); }}
+                    onDelete={handleDelete}
+                    onMarkPaid={handleMarkPaid} />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          ))}
+
+          {/* Pagination */}
+          {total > LIMIT && (
+            <div className="card flex items-center justify-between px-5 py-3">
+              <span className="text-xs text-[var(--ink-faint)]">
+                {offset+1}–{Math.min(offset+LIMIT, total)} von {total}
+              </span>
+              <div className="flex gap-2">
+                <button disabled={offset===0}
+                  onClick={() => setOffset(Math.max(0, offset-LIMIT))}
+                  className="btn-secondary px-3 py-1.5 text-xs disabled:opacity-40">
+                  ← Zurück
+                </button>
+                <button disabled={offset+LIMIT>=total}
+                  onClick={() => setOffset(offset+LIMIT)}
+                  className="btn-secondary px-3 py-1.5 text-xs disabled:opacity-40">
+                  Weiter →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <Modal isOpen={showForm}
         onClose={() => { setShowForm(false); setEditing(undefined); }}

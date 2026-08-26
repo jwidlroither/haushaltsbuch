@@ -2,25 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design Tokens ── */
+/* ── Design Tokens ──
+   Dunkel-first: .dark ist der primäre/Standard-Look (siehe ThemeContext,
+   das den Default auf 'dark' setzt). :root definiert das optionale Hell-Theme. */
 :root {
   --surface:         #ffffff;
-  --surface-raised:  #f6f4f1;
-  --surface-overlay: #edeae5;
-  --ink:             #181612;
-  --ink-muted:       #72706a;
-  --ink-faint:       #b8b4ad;
-  --accent:          #c9611f;
-  --accent-hover:    #b5561c;
-  --accent-muted:    #f6ece3;
-  --accent-ring:     rgba(201, 97, 31, 0.25);
-  --success:         #16a34a;
-  --success-muted:   #dcfce7;
-  --danger:          #c0392b;
+  --surface-raised:  #f4f5f9;
+  --surface-overlay: #ebedf5;
+  --ink:             #14161f;
+  --ink-muted:       #5b6272;
+  --ink-faint:       #9ba1b0;
+  --accent:          #6366f1;
+  --accent-hover:    #4f46e5;
+  --accent-muted:    #eef0ff;
+  --accent-ring:     rgba(99, 102, 241, 0.25);
+  --success:         #059669;
+  --success-muted:   #d1fae5;
+  --danger:          #dc2626;
   --danger-muted:    #fee2e2;
   --warning:         #d97706;
-  --border:          #e5e1db;
-  --border-strong:   #d0cbc4;
+  --border:          #e4e6ef;
+  --border-strong:   #d1d4e0;
   --radius:          14px;
   --radius-sm:       8px;
   --radius-lg:       20px;
@@ -28,23 +30,23 @@
 }
 
 .dark {
-  --surface:         #242018;
-  --surface-raised:  #1e1b15;
-  --surface-overlay: #2e2a21;
-  --ink:             #f0ece6;
-  --ink-muted:       #a8a39a;
-  --ink-faint:       #5a5650;
-  --accent:          #e07840;
-  --accent-hover:    #d06f39;
-  --accent-muted:    #332012;
-  --accent-ring:     rgba(224, 120, 64, 0.28);
-  --success:         #34d270;
-  --success-muted:   #1a3d28;
-  --danger:          #f06060;
-  --danger-muted:    #3d1414;
-  --warning:         #fbbf24;
-  --border:          #38332a;
-  --border-strong:   #4a443a;
+  --surface:         #1a1d27;
+  --surface-raised:  #0f1117;
+  --surface-overlay: #232733;
+  --ink:             #f1f2f6;
+  --ink-muted:       #9298aa;
+  --ink-faint:       #565c6d;
+  --accent:          #6366f1;
+  --accent-hover:    #818cf8;
+  --accent-muted:    #23213f;
+  --accent-ring:     rgba(99, 102, 241, 0.35);
+  --success:         #10b981;
+  --success-muted:   #0b2e22;
+  --danger:          #ef4444;
+  --danger-muted:    #3b1315;
+  --warning:         #f59e0b;
+  --border:          #262a38;
+  --border-strong:   #333849;
 }
 
 /* ── Base ── */

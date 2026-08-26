@@ -104,6 +104,26 @@ export async function deleteTransaction(req: Request, res: Response, next: NextF
   } catch (err) { next(err); }
 }
 
+const DeleteMonthQuerySchema = z.object({
+  month: z.coerce.number().int().min(1).max(12),
+  year: z.coerce.number().int().min(2000),
+});
+
+/** Danger Zone: löscht alle Transaktionen eines Monats unwiderruflich. */
+export async function deleteMonth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+    const { month, year } = DeleteMonthQuerySchema.parse(req.query);
+    const rows = await query(
+      `DELETE FROM transactions
+       WHERE user_id=$1 AND EXTRACT(MONTH FROM date)=$2 AND EXTRACT(YEAR FROM date)=$3
+       RETURNING id`,
+      [userId, month, year]
+    );
+    res.json({ deleted: rows.length });
+  } catch (err) { next(err); }
+}
+
 export async function getSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user!.userId;

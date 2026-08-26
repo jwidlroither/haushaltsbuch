@@ -12,6 +12,7 @@ import TransactionsPage from './pages/TransactionsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import RecurringPage from './pages/RecurringPage';
 import GoalsPage from './pages/GoalsPage';
+import EinstellungenPage from './pages/EinstellungenPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,6 +54,7 @@ export default function App() {
                   <Route path="recurring"     element={<RecurringPage />} />
                   <Route path="goals"         element={<GoalsPage />} />
                   <Route path="categories"    element={<CategoriesPage />} />
+                  <Route path="einstellungen" element={<EinstellungenPage />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
