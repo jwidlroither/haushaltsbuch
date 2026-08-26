@@ -119,6 +119,7 @@ export const swaggerSpec = {
                         userId: { type: 'string' },
                         email:  { type: 'string' },
                         name:   { type: 'string' },
+                        payday: { type: 'integer', nullable: true, description: 'Tag des Monats (1-31), an dem Gehalt eingeht' },
                       },
                     },
                   },
@@ -128,6 +129,46 @@ export const swaggerSpec = {
           },
           '401': { description: 'Nicht authentifiziert' },
         },
+      },
+      patch: {
+        tags: ['Auth'],
+        summary: 'Zahltag setzen',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object', properties: { payday: { type: 'integer', nullable: true, minimum: 1, maximum: 31 } } },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'Aktualisierter Benutzer' },
+          '401': { description: 'Nicht authentifiziert' },
+        },
+      },
+    },
+    '/auth/tokens': {
+      get: {
+        tags: ['Auth'],
+        summary: 'Eigene API-Tokens auflisten',
+        description: 'Der Klartext-Token wird nur bei der Erstellung zurückgegeben.',
+        responses: { '200': { description: 'Liste der Tokens (ohne Klartext-Wert)' } },
+      },
+      post: {
+        tags: ['Auth'],
+        summary: 'Neuen API-Token erzeugen (z.B. für die iOS-App)',
+        requestBody: {
+          content: { 'application/json': { schema: { type: 'object', properties: { name: { type: 'string' } } } } },
+        },
+        responses: { '201': { description: 'Neuer Token inkl. Klartext-Wert' } },
+      },
+    },
+    '/auth/tokens/{id}': {
+      delete: {
+        tags: ['Auth'],
+        summary: 'API-Token löschen',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '204': { description: 'Gelöscht' }, '404': { description: 'Nicht gefunden' } },
       },
     },
     '/auth/logout': {
