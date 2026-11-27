@@ -5,7 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import QuickAddFAB from '../ui/QuickAddFAB';
 
 const NAV = [
-  { to:'/',             icon:'▦',  label:'Dashboard',    end:true  },
+  { to:'/',             icon:'▦',  label:'Übersicht',    end:true  },
   { to:'/transactions', icon:'↕',  label:'Transaktionen'           },
   { to:'/recurring',    icon:'⟳',  label:'Wiederkehrend'           },
   { to:'/goals',        icon:'◎',  label:'Sparziele'               },
