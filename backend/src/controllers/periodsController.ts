@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { query } from '../config/database';
 import { AppError } from '../middleware/errorHandler';
-import { resolvePeriod } from '../utils/period';
+import { resolvePeriod, previousPeriod, type Period } from '../utils/period';
 import { getUserPayday, adjustDebtRemaining } from '../services/periodItems';
 
 interface PeriodItemRow {
@@ -152,5 +152,73 @@ export async function updatePeriodItem(req: Request, res: Response, next: NextFu
     }
 
     res.json({ data: rows[0] });
+  } catch (err) { next(err); }
+}
+
+interface PeriodSummary {
+  period: Period;
+  income: number;
+  available: number;
+  fixedCosts: { planned: number; paid: number };
+  debts: { planned: number; paid: number };
+  expenses: { planned: number; paid: number };
+}
+
+/** Liest einen bereits vergangenen Zeitraum nur aus (keine Auto-Materialisierung –
+ *  ein Zeitraum zeigt nur, was zu der Zeit tatsächlich als Vorlage existierte). */
+async function summarizePeriod(userId: string, period: Period): Promise<PeriodSummary> {
+  const itemTotals = await query<{ source_type: string; planned: string; paid: string }>(
+    `SELECT source_type,
+            COALESCE(SUM(planned_amount), 0) AS planned,
+            COALESCE(SUM(CASE WHEN paid THEN COALESCE(paid_amount, planned_amount) ELSE 0 END), 0) AS paid
+     FROM period_items
+     WHERE user_id=$1 AND period_start=$2
+     GROUP BY source_type`,
+    [userId, period.start]
+  );
+  const fixedRow = itemTotals.find(r => r.source_type === 'fixed');
+  const debtRow = itemTotals.find(r => r.source_type === 'debt');
+
+  const expenseTotals = await query<{ status: string; total: string }>(
+    `SELECT status, COALESCE(SUM(amount),0) as total FROM transactions
+     WHERE user_id=$1 AND type='expense' AND date BETWEEN $2 AND $3
+     GROUP BY status`,
+    [userId, period.start, period.end]
+  );
+  const expensesPlanned = expenseTotals.reduce((a, r) => a + parseFloat(r.total), 0);
+  const expensesPaid = parseFloat(expenseTotals.find(r => r.status === 'bezahlt')?.total ?? '0');
+
+  const incomeRows = await query<{ total: string }>(
+    `SELECT COALESCE(SUM(amount),0) as total FROM transactions
+     WHERE user_id=$1 AND type='income' AND date BETWEEN $2 AND $3`,
+    [userId, period.start, period.end]
+  );
+  const income = parseFloat(incomeRows[0].total);
+
+  const fixedCosts = { planned: parseFloat(fixedRow?.planned ?? '0'), paid: parseFloat(fixedRow?.paid ?? '0') };
+  const debts = { planned: parseFloat(debtRow?.planned ?? '0'), paid: parseFloat(debtRow?.paid ?? '0') };
+  const expenses = { planned: expensesPlanned, paid: expensesPaid };
+  const available = income - fixedCosts.planned - debts.planned - expenses.planned;
+
+  return { period, income, available, fixedCosts, debts, expenses };
+}
+
+const HistoryQuerySchema = z.object({ count: z.coerce.number().int().min(1).max(36).default(12) });
+
+/** Verlauf: die letzten N abgeschlossenen Zeiträume (ohne den laufenden). */
+export async function getPeriodHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+    const { count } = HistoryQuerySchema.parse(req.query);
+    const payday = await getUserPayday(userId);
+
+    let period = resolvePeriod(payday, new Date());
+    const results: PeriodSummary[] = [];
+    for (let i = 0; i < count; i++) {
+      period = previousPeriod(payday, period);
+      results.push(await summarizePeriod(userId, period));
+    }
+
+    res.json({ data: results });
   } catch (err) { next(err); }
 }

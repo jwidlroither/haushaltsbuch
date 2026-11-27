@@ -9,6 +9,7 @@ const NAV = [
   { to:'/transactions', icon:'↕',  label:'Transaktionen'           },
   { to:'/fixkosten',    icon:'📌', label:'Fixkosten'               },
   { to:'/rueckzahlungen',icon:'↩', label:'Rückzahlungen'           },
+  { to:'/verlauf',      icon:'📈', label:'Verlauf'                 },
   { to:'/goals',        icon:'◎',  label:'Sparziele'               },
   { to:'/categories',   icon:'⊞',  label:'Kategorien'              },
   { to:'/einstellungen',icon:'⚙',  label:'Einstellungen'           },

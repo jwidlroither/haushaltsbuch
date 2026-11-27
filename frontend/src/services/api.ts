@@ -3,7 +3,7 @@ import type {
   Transaction, Category, Summary, Budget, BudgetOverview,
   TransactionFilters, CreateTransactionDto, CreateCategoryDto, ApiResponse,
   User, ApiToken, CreatedApiToken,
-  FixedCost, CreateFixedCostDto, Debt, CreateDebtDto, PeriodItemUpdateDto, PeriodOverview,
+  FixedCost, CreateFixedCostDto, Debt, CreateDebtDto, PeriodItemUpdateDto, PeriodOverview, PeriodHistoryEntry,
 } from '../types';
 
 const api = axios.create({
@@ -137,6 +137,7 @@ export const debtsApi = {
 // ── Zeitraum-Übersicht (Monats-Plan) ──────────────────────────
 export const periodsApi = {
   current: (date?: string) => api.get<PeriodOverview>('/periods/current', { params: { date } }),
+  history: (count = 12) => api.get<ApiResponse<PeriodHistoryEntry[]>>('/periods/history', { params: { count } }),
 };
 
 export const periodItemsApi = {

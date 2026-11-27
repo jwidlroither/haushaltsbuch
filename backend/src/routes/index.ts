@@ -11,7 +11,7 @@ import { exportCsv, exportPdf } from '../controllers/exportController';
 import { getTokens, createToken, deleteToken } from '../controllers/tokensController';
 import { getFixedCosts, createFixedCost, updateFixedCost, deleteFixedCost } from '../controllers/fixedCostsController';
 import { getDebts, createDebt, updateDebt, deleteDebt, recordDebtPayment } from '../controllers/debtsController';
-import { getCurrentPeriod, updatePeriodItem } from '../controllers/periodsController';
+import { getCurrentPeriod, updatePeriodItem, getPeriodHistory } from '../controllers/periodsController';
 
 const router = Router();
 router.get('/auth/login',    initiateLogin);
@@ -68,6 +68,7 @@ router.put('/debts/:id',         authenticate, updateDebt);
 router.delete('/debts/:id',      authenticate, deleteDebt);
 router.post('/debts/:id/payment',authenticate, recordDebtPayment);
 
+router.get('/periods/history',      authenticate, getPeriodHistory);
 router.get('/periods/current',      authenticate, getCurrentPeriod);
 router.patch('/period-items/:id',   authenticate, updatePeriodItem);
 

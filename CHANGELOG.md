@@ -5,7 +5,33 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
-## [1.6.0] – 2026-08 (aktuell)
+## [1.7.0] – 2026-11 (aktuell)
+
+### Neu – Umbau: Monats-Plan statt Buchungsliste
+- **Zeitraum-Konzept** (Zahltag bis Zahltag, Fallback Kalendermonat ohne Zahltag)
+  ersetzt die reine Kalendermonats-Sicht als zentrale Zeiteinheit der App
+- **Startseite „Übersicht"**: „Frei verfügbar" groß + Balken mit den vier
+  Anteilen, drei einklappbare Bereiche (Fixkosten/Rückzahlungen/Ausgaben) mit
+  Geplant/Bezahlt/Offen-Summen, Abhaken statt erst buchen und dann auswerten
+- **Fixkosten-Seite**: feste Beträge pro Zeitraum verwalten (ersetzt die
+  bisherige „Wiederkehrend"-Seite für monatliche Ausgaben; bestehende aktive
+  monatliche Einträge werden automatisch übernommen)
+- **Rückzahlungen-Seite**: privat/Inkasso/Klarna-Ratenkauf/sonstige, gruppiert,
+  mit Gesamtrestschuld, Fortschrittsbalken + Abzahlungs-Prognose und
+  Sonderzahlungen
+- **Verlauf-Seite**: die letzten 12 abgeschlossenen Zeiträume mit Endstand
+  „frei verfügbar", plus die bisherigen Monats-Statistiken (Kategorie-Chart,
+  6-Monats-Trend, Sparkline) und CSV/PDF-Export, die vorher auf dem Dashboard
+  lagen
+- Neue Tabellen `fixed_costs`, `debts`, `period_items` (Migrationen 010+011)
+
+### Verbessert
+- Jede Rückzahlung – ob reguläre Rate oder Sonderzahlung – läuft über
+  dieselbe Buchführung, damit Fortschritt/Prognose konsistent bleiben
+
+---
+
+## [1.6.0] – 2026-08
 
 ### Neu
 - **iOS App (SwiftUI, iOS 17+)** – natives Dashboard, Schnelleingabe, Transaktionsliste

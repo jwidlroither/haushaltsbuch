@@ -260,3 +260,12 @@ export interface PeriodOverview {
   debts: PeriodSection<PeriodItem>;
   expenses: PeriodSection<Transaction>;
 }
+
+export interface PeriodHistoryEntry {
+  period: Period;
+  income: number;
+  available: number;
+  fixedCosts: { planned: number; paid: number };
+  debts: { planned: number; paid: number };
+  expenses: { planned: number; paid: number };
+}
