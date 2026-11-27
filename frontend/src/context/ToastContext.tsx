@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -35,12 +35,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     if (duration > 0) setTimeout(() => dismiss(id), duration);
   }, [dismiss]);
 
-  const toast = {
+  // Referenziell stabil halten: andernfalls bekommt jeder Verbraucher bei JEDEM
+  // Toast-Event (auch an anderer Stelle der App) ein neues `toast`-Objekt, was
+  // jedes `useCallback(fn, [toast])` neu erzeugt und jeden darauf lauschenden
+  // `useEffect` erneut auslöst – schlägt der dadurch neu gestartete Request
+  // seinerseits fehl und ruft `toast.error(...)` auf, entsteht eine
+  // Endlosschleife aus Fehler-Toast → neuer Request → Fehler-Toast → ...
+  const toast = useMemo(() => ({
     success: (msg: string, d?: number) => add('success', msg, d),
     error:   (msg: string, d?: number) => add('error',   msg, d),
     warning: (msg: string, d?: number) => add('warning', msg, d),
     info:    (msg: string, d?: number) => add('info',    msg, d),
-  };
+  }), [add]);
 
   return (
     <ToastContext.Provider value={{ toasts, toast, dismiss }}>
