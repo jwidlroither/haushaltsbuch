@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { PeriodItem } from '../../types';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency, formatDate } from '../../utils/format';
 
 interface Props {
   item: PeriodItem;
@@ -46,6 +46,10 @@ export default function PeriodItemRow({ item, onTogglePaid, onChangeAmount }: Pr
           {item.due_day && <span>fällig am {item.due_day}.</span>}
           {item.creditor_type && (
             <span className="px-1.5 py-0.5 rounded bg-[var(--surface-overlay)]">{CREDITOR_LABEL[item.creditor_type]}</span>
+          )}
+          {item.subscription_next_due_date && <span>nächste Abbuchung {formatDate(item.subscription_next_due_date)}</span>}
+          {item.subscription_category && (
+            <span className="px-1.5 py-0.5 rounded bg-[var(--surface-overlay)]">{item.subscription_category}</span>
           )}
         </div>
       </div>

@@ -220,9 +220,24 @@ export interface CreateDebtDto {
   due_day?: number | null; active?: boolean; note?: string | null;
 }
 
+export type SubscriptionInterval = 'monthly' | 'quarterly' | 'yearly' | 'irregular';
+export type SubscriptionCategory = 'Streaming' | 'Software' | 'Wertkarte' | 'Sonstige';
+
+export interface Subscription {
+  id: string; name: string; amount: number; interval: SubscriptionInterval;
+  next_due_date: string | null; category: SubscriptionCategory;
+  active: boolean; note: string | null;
+}
+
+export interface CreateSubscriptionDto {
+  name: string; amount: number; interval: SubscriptionInterval;
+  next_due_date?: string | null; category?: SubscriptionCategory;
+  active?: boolean; note?: string | null;
+}
+
 export interface PeriodItem {
   id: string;
-  source_type: 'fixed' | 'debt';
+  source_type: 'fixed' | 'debt' | 'subscription';
   source_id: string;
   planned_amount: number;
   paid: boolean;
@@ -231,6 +246,9 @@ export interface PeriodItem {
   name: string;
   due_day: number | null;
   creditor_type: CreditorType | null;
+  subscription_category: SubscriptionCategory | null;
+  subscription_interval: SubscriptionInterval | null;
+  subscription_next_due_date: string | null;
 }
 
 export interface PeriodItemUpdateDto {

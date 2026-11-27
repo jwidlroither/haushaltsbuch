@@ -5,7 +5,28 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
-## [1.7.0] – 2026-11 (aktuell)
+## [1.8.0] – 2026-11 (aktuell)
+
+### Neu
+- **Abos-Seite** (`/abos`): Streaming/Software/Wertkarten/Sonstiges, Monats- und
+  Jahressumme, Hinweis bei Abbuchungen in den nächsten 7 Tagen, Kategorie-Filter,
+  Kündigen ohne zu löschen (Historie bleibt sichtbar)
+- Abos zählen zu den Fixkosten: in der Übersicht erscheint eine aufklappbare
+  „Abos"-Unterzeile im Fixkosten-Bereich, „Frei verfügbar" berücksichtigt sie
+  automatisch mit (eine gemeinsame Summe, keine Doppelzählung)
+- Monatliche Abos werden jeden Zeitraum übernommen, vierteljährliche/jährliche
+  nur im Zeitraum ihrer nächsten Abbuchung (danach automatisch weitergesetzt);
+  „unregelmäßig" (z.B. Wertkarten) nie automatisch – stattdessen ein manueller
+  „Jetzt aufgeladen"-Button, der den tatsächlichen Betrag direkt im laufenden
+  Zeitraum erfasst
+- Neue Tabelle `subscriptions`, `period_items.source_type` um `subscription`
+  erweitert (Migration 012)
+- Hinweis-Banner auf der Abos-Seite, falls noch ein alter Fixkosten-Sammelposten
+  „Abos" existiert (keine automatische Deaktivierung – das entscheidet der Nutzer)
+
+---
+
+## [1.7.0] – 2026-11
 
 ### Neu – Umbau: Monats-Plan statt Buchungsliste
 - **Zeitraum-Konzept** (Zahltag bis Zahltag, Fallback Kalendermonat ohne Zahltag)

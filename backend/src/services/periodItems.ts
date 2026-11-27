@@ -1,5 +1,7 @@
 import { query } from '../config/database';
-import { resolvePeriod, type Period } from '../utils/period';
+import { resolvePeriod, nextPeriod, type Period } from '../utils/period';
+
+export type SourceType = 'fixed' | 'debt' | 'subscription';
 
 /** Lädt den Zahltag des Nutzers (für resolvePeriod – null = Kalendermonat-Fallback). */
 export async function getUserPayday(userId: string): Promise<number | null> {
@@ -38,7 +40,7 @@ export async function adjustDebtRemaining(userId: string, debtId: string, delta:
  */
 export async function addPeriodPayment(
   userId: string,
-  sourceType: 'fixed' | 'debt',
+  sourceType: SourceType,
   sourceId: string,
   amount: number,
   defaultPlannedAmount: number,
@@ -62,5 +64,58 @@ export async function addPeriodPayment(
        VALUES ($1,$2,$3,$4,$5,TRUE,NOW(),$6)`,
       [userId, period.start, sourceType, sourceId, Math.max(defaultPlannedAmount, amount), amount]
     );
+  }
+}
+
+type SubscriptionInterval = 'monthly' | 'quarterly' | 'yearly' | 'irregular';
+
+function toDateString(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/** +1/+3/+12 Monate ab `date` (UTC, um die von pg als UTC-Mitternacht gelieferten
+ *  DATE-Werte nicht durch die Serverzeitzone zu verschieben). */
+function advanceDueDate(date: Date, interval: 'monthly' | 'quarterly' | 'yearly'): Date {
+  const months = interval === 'monthly' ? 1 : interval === 'quarterly' ? 3 : 12;
+  const next = new Date(date);
+  next.setUTCMonth(next.getUTCMonth() + months);
+  return next;
+}
+
+/**
+ * Übernimmt fällige Abos in den Zeitraum: monatliche immer, quartals-/jährliche nur
+ * wenn ihr `next_due_date` in den Zeitraum fällt. 'irregular' (z.B. Wertkarten mit
+ * unvorhersehbarem Timing) wird nie automatisch übernommen – siehe addPeriodPayment
+ * für die manuelle Variante ("jetzt aufnehmen").
+ *
+ * Nach dem (erstmaligen) Anlegen des period_items für diesen Zeitraum wird
+ * `next_due_date` weitergesetzt, damit künftige Zeiträume die nächste Fälligkeit
+ * kennen – ohne diesen Schritt würde ein quartals-/jährliches Abo nie wieder
+ * matchen, weil sein next_due_date für immer in der Vergangenheit bliebe.
+ */
+export async function materializeSubscriptions(userId: string, payday: number | null, period: Period): Promise<void> {
+  const due = await query<{ id: string; amount: string; interval: SubscriptionInterval; next_due_date: string | null }>(
+    `SELECT id, amount, interval, next_due_date FROM subscriptions
+     WHERE user_id=$1 AND active=TRUE AND interval != 'irregular'
+       AND (interval = 'monthly' OR (next_due_date IS NOT NULL AND next_due_date BETWEEN $2 AND $3))`,
+    [userId, period.start, period.end]
+  );
+
+  for (const sub of due) {
+    const inserted = await query<{ id: string }>(
+      `INSERT INTO period_items (user_id, period_start, source_type, source_id, planned_amount)
+       VALUES ($1,$2,'subscription',$3,$4)
+       ON CONFLICT (user_id, period_start, source_type, source_id) DO NOTHING
+       RETURNING id`,
+      [userId, period.start, sub.id, sub.amount]
+    );
+    if (!inserted.length) continue; // für diesen Zeitraum schon materialisiert
+
+    // 'irregular' ist durch das WHERE oben bereits ausgeschlossen, bleibt TS aber
+    // über den SELECT-Typ als Möglichkeit erhalten.
+    const nextDueDate = sub.interval === 'monthly'
+      ? nextPeriod(payday, period).start // informativ: Beginn des nächsten Zeitraums
+      : toDateString(advanceDueDate(new Date(`${sub.next_due_date}T00:00:00Z`), sub.interval as 'quarterly' | 'yearly'));
+    await query('UPDATE subscriptions SET next_due_date=$2 WHERE id=$1', [sub.id, nextDueDate]);
   }
 }

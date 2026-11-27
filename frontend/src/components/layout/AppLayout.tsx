@@ -8,6 +8,7 @@ const NAV = [
   { to:'/',             icon:'▦',  label:'Übersicht',    end:true  },
   { to:'/transactions', icon:'↕',  label:'Transaktionen'           },
   { to:'/fixkosten',    icon:'📌', label:'Fixkosten'               },
+  { to:'/abos',         icon:'🎬', label:'Abos'                    },
   { to:'/rueckzahlungen',icon:'↩', label:'Rückzahlungen'           },
   { to:'/verlauf',      icon:'📈', label:'Verlauf'                 },
   { to:'/goals',        icon:'◎',  label:'Sparziele'               },
