@@ -6,6 +6,7 @@ import type { PeriodOverview, PeriodItem, Transaction } from '../types';
 import PeriodHero from '../components/period/PeriodHero';
 import PeriodSection from '../components/period/PeriodSection';
 import PeriodItemRow from '../components/period/PeriodItemRow';
+import NestedAbosRow from '../components/period/NestedAbosRow';
 import TransactionItem from '../components/transactions/TransactionItem';
 import Modal from '../components/ui/Modal';
 import TransactionForm from '../components/transactions/TransactionForm';
@@ -97,9 +98,13 @@ export default function UebersichtPage() {
         isEmpty={overview.fixedCosts.items.length === 0}
         emptyLabel="Noch keine Fixkosten hinterlegt – unter „Fixkosten” anlegen."
       >
-        {overview.fixedCosts.items.map(item => (
+        {overview.fixedCosts.items.filter(i => i.source_type === 'fixed').map(item => (
           <PeriodItemRow key={item.id} item={item} onTogglePaid={handleTogglePaid} onChangeAmount={handleChangeAmount} />
         ))}
+        <NestedAbosRow
+          items={overview.fixedCosts.items.filter(i => i.source_type === 'subscription')}
+          onTogglePaid={handleTogglePaid} onChangeAmount={handleChangeAmount}
+        />
       </PeriodSection>
 
       <PeriodSection

@@ -4,6 +4,7 @@ import type {
   TransactionFilters, CreateTransactionDto, CreateCategoryDto, ApiResponse,
   User, ApiToken, CreatedApiToken,
   FixedCost, CreateFixedCostDto, Debt, CreateDebtDto, PeriodItemUpdateDto, PeriodOverview, PeriodHistoryEntry,
+  Subscription, CreateSubscriptionDto,
 } from '../types';
 
 const api = axios.create({
@@ -132,6 +133,17 @@ export const debtsApi = {
   update:  (id: string, d: Partial<CreateDebtDto>) => api.put<ApiResponse<Debt>>(`/debts/${id}`, d),
   delete:  (id: string) => api.delete(`/debts/${id}`),
   payment: (id: string, amount: number) => api.post<ApiResponse<Debt>>(`/debts/${id}/payment`, { amount }),
+};
+
+// ── Abos ───────────────────────────────────────────────────────
+export const subscriptionsApi = {
+  list:   () => api.get<ApiResponse<Subscription[]>>('/subscriptions'),
+  create: (d: CreateSubscriptionDto) => api.post<ApiResponse<Subscription>>('/subscriptions', d),
+  update: (id: string, d: Partial<CreateSubscriptionDto>) =>
+    api.put<ApiResponse<Subscription>>(`/subscriptions/${id}`, d),
+  // Nur für 'irregular'-Abos (Wertkarten): manuell in den laufenden Zeitraum aufnehmen.
+  addToCurrentPeriod: (id: string, amount: number) =>
+    api.post<{ period: { start: string; end: string } }>(`/subscriptions/${id}/add-to-period`, { amount }),
 };
 
 // ── Zeitraum-Übersicht (Monats-Plan) ──────────────────────────

@@ -12,6 +12,7 @@ import TransactionsPage from './pages/TransactionsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import RecurringPage from './pages/RecurringPage';
 import FixkostenPage from './pages/FixkostenPage';
+import AbosPage from './pages/AbosPage';
 import RueckzahlungenPage from './pages/RueckzahlungenPage';
 import VerlaufPage from './pages/VerlaufPage';
 import GoalsPage from './pages/GoalsPage';
@@ -55,6 +56,7 @@ export default function App() {
                   <Route index                element={<UebersichtPage />} />
                   <Route path="transactions"    element={<TransactionsPage />} />
                   <Route path="fixkosten"       element={<FixkostenPage />} />
+                  <Route path="abos"            element={<AbosPage />} />
                   <Route path="rueckzahlungen"  element={<RueckzahlungenPage />} />
                   <Route path="verlauf"         element={<VerlaufPage />} />
                   <Route path="recurring"     element={<RecurringPage />} />

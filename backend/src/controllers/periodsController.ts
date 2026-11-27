@@ -3,11 +3,11 @@ import { z } from 'zod';
 import { query } from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import { resolvePeriod, previousPeriod, type Period } from '../utils/period';
-import { getUserPayday, adjustDebtRemaining } from '../services/periodItems';
+import { getUserPayday, adjustDebtRemaining, materializeSubscriptions } from '../services/periodItems';
 
 interface PeriodItemRow {
   id: string;
-  source_type: 'fixed' | 'debt';
+  source_type: 'fixed' | 'debt' | 'subscription';
   source_id: string;
   planned_amount: string;
   paid: boolean;
@@ -16,6 +16,9 @@ interface PeriodItemRow {
   name: string;
   due_day: number | null;
   creditor_type: string | null;
+  subscription_category: string | null;
+  subscription_interval: string | null;
+  subscription_next_due_date: string | null;
 }
 
 function sumSection(items: PeriodItemRow[]) {
@@ -26,21 +29,23 @@ function sumSection(items: PeriodItemRow[]) {
   return { planned, paid, open: planned - paid };
 }
 
-/** Legt für alle aktiven Fixkosten/Rückzahlungen des Nutzers fehlende period_items
- *  für den gegebenen Zeitraum an (idempotent dank UNIQUE-Constraint + DO NOTHING). */
-async function materializePeriod(userId: string, periodStart: string): Promise<void> {
+/** Legt für alle aktiven Fixkosten/Rückzahlungen/Abos des Nutzers fehlende
+ *  period_items für den gegebenen Zeitraum an (idempotent dank UNIQUE-Constraint
+ *  + DO NOTHING). */
+async function materializePeriod(userId: string, payday: number | null, period: Period): Promise<void> {
   await query(
     `INSERT INTO period_items (user_id, period_start, source_type, source_id, planned_amount)
      SELECT $1, $2, 'fixed', id, amount FROM fixed_costs WHERE user_id=$1 AND active=TRUE
      ON CONFLICT (user_id, period_start, source_type, source_id) DO NOTHING`,
-    [userId, periodStart]
+    [userId, period.start]
   );
   await query(
     `INSERT INTO period_items (user_id, period_start, source_type, source_id, planned_amount)
      SELECT $1, $2, 'debt', id, COALESCE(monthly_rate, 0) FROM debts WHERE user_id=$1 AND active=TRUE
      ON CONFLICT (user_id, period_start, source_type, source_id) DO NOTHING`,
-    [userId, periodStart]
+    [userId, period.start]
   );
+  await materializeSubscriptions(userId, payday, period);
 }
 
 const DateQuerySchema = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() });
@@ -53,21 +58,28 @@ export async function getCurrentPeriod(req: Request, res: Response, next: NextFu
     const payday = await getUserPayday(userId);
     const period = resolvePeriod(payday, referenceDate);
 
-    await materializePeriod(userId, period.start);
+    await materializePeriod(userId, payday, period);
 
     const items = await query<PeriodItemRow>(
       `SELECT pi.id, pi.source_type, pi.source_id, pi.planned_amount, pi.paid, pi.paid_at, pi.paid_amount,
-              COALESCE(fc.name, d.name) AS name,
+              COALESCE(fc.name, d.name, s.name) AS name,
               COALESCE(fc.due_day, d.due_day) AS due_day,
-              d.creditor_type
+              d.creditor_type,
+              s.category AS subscription_category,
+              s.interval AS subscription_interval,
+              s.next_due_date AS subscription_next_due_date
        FROM period_items pi
-       LEFT JOIN fixed_costs fc ON pi.source_type='fixed' AND pi.source_id=fc.id
-       LEFT JOIN debts d        ON pi.source_type='debt'  AND pi.source_id=d.id
+       LEFT JOIN fixed_costs fc   ON pi.source_type='fixed'        AND pi.source_id=fc.id
+       LEFT JOIN debts d          ON pi.source_type='debt'         AND pi.source_id=d.id
+       LEFT JOIN subscriptions s  ON pi.source_type='subscription' AND pi.source_id=s.id
        WHERE pi.user_id=$1 AND pi.period_start=$2
        ORDER BY due_day NULLS LAST, name`,
       [userId, period.start]
     );
-    const fixedItems = items.filter(i => i.source_type === 'fixed');
+    // Abos zählen zu den Fixkosten (eine gemeinsame Summe, keine doppelte Zählung) –
+    // das Frontend gruppiert sie innerhalb des Fixkosten-Bereichs optisch in eine
+    // eigene "Abos"-Unterzeile.
+    const fixedItems = items.filter(i => i.source_type === 'fixed' || i.source_type === 'subscription');
     const debtItems = items.filter(i => i.source_type === 'debt');
 
     const expenseRows = await query(
@@ -124,7 +136,7 @@ export async function updatePeriodItem(req: Request, res: Response, next: NextFu
     const d = PeriodItemUpdateSchema.parse(req.body);
 
     const existingRows = await query<{
-      source_type: 'fixed' | 'debt'; source_id: string;
+      source_type: 'fixed' | 'debt' | 'subscription'; source_id: string;
       planned_amount: string; paid: boolean; paid_amount: string | null;
     }>(
       'SELECT source_type, source_id, planned_amount, paid, paid_amount FROM period_items WHERE id=$1 AND user_id=$2',
@@ -177,6 +189,7 @@ async function summarizePeriod(userId: string, period: Period): Promise<PeriodSu
     [userId, period.start]
   );
   const fixedRow = itemTotals.find(r => r.source_type === 'fixed');
+  const subscriptionRow = itemTotals.find(r => r.source_type === 'subscription');
   const debtRow = itemTotals.find(r => r.source_type === 'debt');
 
   const expenseTotals = await query<{ status: string; total: string }>(
@@ -195,7 +208,10 @@ async function summarizePeriod(userId: string, period: Period): Promise<PeriodSu
   );
   const income = parseFloat(incomeRows[0].total);
 
-  const fixedCosts = { planned: parseFloat(fixedRow?.planned ?? '0'), paid: parseFloat(fixedRow?.paid ?? '0') };
+  const fixedCosts = {
+    planned: parseFloat(fixedRow?.planned ?? '0') + parseFloat(subscriptionRow?.planned ?? '0'),
+    paid: parseFloat(fixedRow?.paid ?? '0') + parseFloat(subscriptionRow?.paid ?? '0'),
+  };
   const debts = { planned: parseFloat(debtRow?.planned ?? '0'), paid: parseFloat(debtRow?.paid ?? '0') };
   const expenses = { planned: expensesPlanned, paid: expensesPaid };
   const available = income - fixedCosts.planned - debts.planned - expenses.planned;

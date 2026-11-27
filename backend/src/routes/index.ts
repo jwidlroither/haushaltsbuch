@@ -12,6 +12,7 @@ import { getTokens, createToken, deleteToken } from '../controllers/tokensContro
 import { getFixedCosts, createFixedCost, updateFixedCost, deleteFixedCost } from '../controllers/fixedCostsController';
 import { getDebts, createDebt, updateDebt, deleteDebt, recordDebtPayment } from '../controllers/debtsController';
 import { getCurrentPeriod, updatePeriodItem, getPeriodHistory } from '../controllers/periodsController';
+import { getSubscriptions, createSubscription, updateSubscription, addSubscriptionToCurrentPeriod } from '../controllers/subscriptionsController';
 
 const router = Router();
 router.get('/auth/login',    initiateLogin);
@@ -67,6 +68,11 @@ router.post('/debts',            authenticate, createDebt);
 router.put('/debts/:id',         authenticate, updateDebt);
 router.delete('/debts/:id',      authenticate, deleteDebt);
 router.post('/debts/:id/payment',authenticate, recordDebtPayment);
+
+router.get('/subscriptions',                       authenticate, getSubscriptions);
+router.post('/subscriptions',                      authenticate, createSubscription);
+router.put('/subscriptions/:id',                   authenticate, updateSubscription);
+router.post('/subscriptions/:id/add-to-period',    authenticate, addSubscriptionToCurrentPeriod);
 
 router.get('/periods/history',      authenticate, getPeriodHistory);
 router.get('/periods/current',      authenticate, getCurrentPeriod);
