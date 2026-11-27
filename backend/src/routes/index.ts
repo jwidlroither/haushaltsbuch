@@ -9,6 +9,9 @@ import { swaggerSpec } from '../config/swagger';
 import { getGoals, createGoal, updateGoal, deleteGoal, depositToGoal } from '../controllers/goalsController';
 import { exportCsv, exportPdf } from '../controllers/exportController';
 import { getTokens, createToken, deleteToken } from '../controllers/tokensController';
+import { getFixedCosts, createFixedCost, updateFixedCost, deleteFixedCost } from '../controllers/fixedCostsController';
+import { getDebts, createDebt, updateDebt, deleteDebt, recordDebtPayment } from '../controllers/debtsController';
+import { getCurrentPeriod, updatePeriodItem, getPeriodHistory } from '../controllers/periodsController';
 
 const router = Router();
 router.get('/auth/login',    initiateLogin);
@@ -53,6 +56,21 @@ router.post('/goals',               authenticate, createGoal);
 router.put('/goals/:id',            authenticate, updateGoal);
 router.delete('/goals/:id',         authenticate, deleteGoal);
 router.post('/goals/:id/deposit',   authenticate, depositToGoal);
+
+router.get('/fixed-costs',        authenticate, getFixedCosts);
+router.post('/fixed-costs',       authenticate, createFixedCost);
+router.put('/fixed-costs/:id',    authenticate, updateFixedCost);
+router.delete('/fixed-costs/:id', authenticate, deleteFixedCost);
+
+router.get('/debts',             authenticate, getDebts);
+router.post('/debts',            authenticate, createDebt);
+router.put('/debts/:id',         authenticate, updateDebt);
+router.delete('/debts/:id',      authenticate, deleteDebt);
+router.post('/debts/:id/payment',authenticate, recordDebtPayment);
+
+router.get('/periods/history',      authenticate, getPeriodHistory);
+router.get('/periods/current',      authenticate, getCurrentPeriod);
+router.patch('/period-items/:id',   authenticate, updatePeriodItem);
 
 router.get('/export/csv', authenticate, exportCsv);
 router.get('/export/pdf', authenticate, exportPdf);

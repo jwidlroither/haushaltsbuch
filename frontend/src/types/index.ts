@@ -190,3 +190,82 @@ export interface SparklinePoint {
 }
 
 export type SparklineRange = '7d' | 'month' | 'year' | 'all';
+
+// ── Monats-Plan (Umbau: Zeitraum = Zahltag bis Zahltag) ─────────
+
+export interface FixedCost {
+  id: string; user_id: string; name: string; amount: number;
+  due_day: number | null; active: boolean; note: string | null;
+  created_at: string; updated_at: string;
+}
+
+export interface CreateFixedCostDto {
+  name: string; amount: number; due_day?: number | null;
+  active?: boolean; note?: string | null;
+}
+
+export type CreditorType = 'privat' | 'inkasso' | 'ratenkauf' | 'sonstige';
+
+export interface Debt {
+  id: string; name: string; creditor_type: CreditorType;
+  monthly_rate: number | null; remaining_amount: number | null;
+  due_day: number | null; active: boolean; note: string | null;
+  total_paid: number; progress_percent: number | null;
+  months_remaining: number | null; projected_payoff_date: string | null;
+}
+
+export interface CreateDebtDto {
+  name: string; creditor_type: CreditorType;
+  monthly_rate?: number | null; remaining_amount?: number | null;
+  due_day?: number | null; active?: boolean; note?: string | null;
+}
+
+export interface PeriodItem {
+  id: string;
+  source_type: 'fixed' | 'debt';
+  source_id: string;
+  planned_amount: number;
+  paid: boolean;
+  paid_at: string | null;
+  paid_amount: number | null;
+  name: string;
+  due_day: number | null;
+  creditor_type: CreditorType | null;
+}
+
+export interface PeriodItemUpdateDto {
+  paid?: boolean;
+  paid_amount?: number | null;
+  planned_amount?: number;
+}
+
+export interface Period {
+  start: string;
+  end: string;
+}
+
+export interface PeriodSection<TItem> {
+  items: TItem[];
+  planned: number;
+  paid: number;
+  open: number;
+}
+
+export interface PeriodOverview {
+  period: Period;
+  payday: number | null;
+  income: number;
+  available: number;
+  fixedCosts: PeriodSection<PeriodItem>;
+  debts: PeriodSection<PeriodItem>;
+  expenses: PeriodSection<Transaction>;
+}
+
+export interface PeriodHistoryEntry {
+  period: Period;
+  income: number;
+  available: number;
+  fixedCosts: { planned: number; paid: number };
+  debts: { planned: number; paid: number };
+  expenses: { planned: number; paid: number };
+}

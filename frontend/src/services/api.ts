@@ -2,7 +2,8 @@ import axios, { type AxiosError } from 'axios';
 import type {
   Transaction, Category, Summary, Budget, BudgetOverview,
   TransactionFilters, CreateTransactionDto, CreateCategoryDto, ApiResponse,
-  User, ApiToken, CreatedApiToken
+  User, ApiToken, CreatedApiToken,
+  FixedCost, CreateFixedCostDto, Debt, CreateDebtDto, PeriodItemUpdateDto, PeriodOverview, PeriodHistoryEntry,
 } from '../types';
 
 const api = axios.create({
@@ -113,6 +114,34 @@ export const goalsApi = {
   delete:  (id: string) => api.delete(`/goals/${id}`),
   deposit: (id: string, amount: number) =>
     api.post<ApiResponse<import('../types').SavingsGoal> & { completed: boolean }>(`/goals/${id}/deposit`, { amount }),
+};
+
+// ── Fixkosten ────────────────────────────────────────────────
+export const fixedCostsApi = {
+  list:   () => api.get<ApiResponse<FixedCost[]>>('/fixed-costs'),
+  create: (d: CreateFixedCostDto) => api.post<ApiResponse<FixedCost>>('/fixed-costs', d),
+  update: (id: string, d: Partial<CreateFixedCostDto>) =>
+    api.put<ApiResponse<FixedCost>>(`/fixed-costs/${id}`, d),
+  delete: (id: string) => api.delete(`/fixed-costs/${id}`),
+};
+
+// ── Rückzahlungen ────────────────────────────────────────────
+export const debtsApi = {
+  list:    () => api.get<ApiResponse<Debt[]>>('/debts'),
+  create:  (d: CreateDebtDto) => api.post<ApiResponse<Debt>>('/debts', d),
+  update:  (id: string, d: Partial<CreateDebtDto>) => api.put<ApiResponse<Debt>>(`/debts/${id}`, d),
+  delete:  (id: string) => api.delete(`/debts/${id}`),
+  payment: (id: string, amount: number) => api.post<ApiResponse<Debt>>(`/debts/${id}/payment`, { amount }),
+};
+
+// ── Zeitraum-Übersicht (Monats-Plan) ──────────────────────────
+export const periodsApi = {
+  current: (date?: string) => api.get<PeriodOverview>('/periods/current', { params: { date } }),
+  history: (count = 12) => api.get<ApiResponse<PeriodHistoryEntry[]>>('/periods/history', { params: { count } }),
+};
+
+export const periodItemsApi = {
+  update: (id: string, d: PeriodItemUpdateDto) => api.patch<ApiResponse<unknown>>(`/period-items/${id}`, d),
 };
 
 export async function downloadExport(type: 'csv' | 'pdf', params: Record<string, unknown> = {}): Promise<void> {
