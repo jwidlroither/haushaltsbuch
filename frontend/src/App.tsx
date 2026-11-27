@@ -11,6 +11,8 @@ import UebersichtPage from './pages/UebersichtPage';
 import TransactionsPage from './pages/TransactionsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import RecurringPage from './pages/RecurringPage';
+import FixkostenPage from './pages/FixkostenPage';
+import RueckzahlungenPage from './pages/RueckzahlungenPage';
 import GoalsPage from './pages/GoalsPage';
 import EinstellungenPage from './pages/EinstellungenPage';
 
@@ -50,7 +52,9 @@ export default function App() {
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />
                 <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   <Route index                element={<UebersichtPage />} />
-                  <Route path="transactions"  element={<TransactionsPage />} />
+                  <Route path="transactions"    element={<TransactionsPage />} />
+                  <Route path="fixkosten"       element={<FixkostenPage />} />
+                  <Route path="rueckzahlungen"  element={<RueckzahlungenPage />} />
                   <Route path="recurring"     element={<RecurringPage />} />
                   <Route path="goals"         element={<GoalsPage />} />
                   <Route path="categories"    element={<CategoriesPage />} />

@@ -7,7 +7,8 @@ import QuickAddFAB from '../ui/QuickAddFAB';
 const NAV = [
   { to:'/',             icon:'▦',  label:'Übersicht',    end:true  },
   { to:'/transactions', icon:'↕',  label:'Transaktionen'           },
-  { to:'/recurring',    icon:'⟳',  label:'Wiederkehrend'           },
+  { to:'/fixkosten',    icon:'📌', label:'Fixkosten'               },
+  { to:'/rueckzahlungen',icon:'↩', label:'Rückzahlungen'           },
   { to:'/goals',        icon:'◎',  label:'Sparziele'               },
   { to:'/categories',   icon:'⊞',  label:'Kategorien'              },
   { to:'/einstellungen',icon:'⚙',  label:'Einstellungen'           },
