@@ -61,5 +61,12 @@ export const config = {
     secret: env.JWT_SECRET,
   },
 
-  frontendUrl: env.FRONTEND_URL,
+  // Trailing slash entfernen: an mehreren Stellen wird `${frontendUrl}/pfad` gebaut
+  // (z.B. OIDC-Redirect nach erfolgreichem Login). Mit Slash am Ende entstünde
+  // "https://host//auth/callback" – der doppelte Slash lässt den React-Router
+  // die Route verfehlen (landet auf der *-Wildcard-Route), der Token aus der
+  // Callback-URL wird nie gelesen, und die App springt kommentarlos zurück zu
+  // /login. Betrifft auch den CORS-`origin`-Vergleich, der exakte Gleichheit
+  // mit dem Origin-Header verlangt (der nie einen Slash am Ende hat).
+  frontendUrl: env.FRONTEND_URL.replace(/\/+$/, ''),
 };
