@@ -14,8 +14,13 @@ import { startCleanupJob } from './utils/cleanupJob';
 
 const app = express();
 
-// Trust Nginx reverse proxy
-app.set('trust proxy', 1);
+// Zwei Hops zwischen Client und diesem Prozess: der externe Reverse-Proxy, der
+// HTTPS terminiert (z.B. Zoraxy), und der im eigenen docker-compose.yml
+// mitgelieferte nginx-Container davor. `trust proxy: 1` würde nur den
+// nginx-Container vertrauen und X-Forwarded-For/-Proto des äußeren Proxys
+// ignorieren (req.ip/req.protocol zeigen dann auf den nginx-Container statt
+// den echten Client bzw. auf "http" statt "https").
+app.set('trust proxy', 2);
 
 // Request ID (first, so all logs can reference it)
 app.use(requestId);

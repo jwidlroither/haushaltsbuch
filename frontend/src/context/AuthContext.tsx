@@ -42,7 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await authApi.getMe();
       setUser(res.data.user);
-    } catch {
+    } catch (err) {
+      // Zeigt die echte Ursache in der Konsole, statt stillschweigend auf /login
+      // zu landen (z.B. nach erfolgreichem SSO-Login, wenn /auth/me aus einem
+      // anderen Grund als abgelaufenem Token fehlschlägt – 500er, Netzwerk, ...).
+      console.error('GET /auth/me fehlgeschlagen – Token wird verworfen.', err);
       localStorage.removeItem('auth_token');
     } finally {
       setIsLoading(false);
